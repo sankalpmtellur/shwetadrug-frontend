@@ -1,0 +1,131 @@
+import { useEffect, useMemo, useState } from "react";
+import { CalendarClock, RefreshCcw, ShieldAlert, TriangleAlert } from "lucide-react";
+import { Badge } from "../components/common/Badge";
+import { Button } from "../components/common/Button";
+import { Card } from "../components/common/Card";
+import { Metric } from "../components/common/Metric";
+import { Cell, Table } from "../components/common/Table";
+import { getApiErrorMessage, inventoryService, type InventoryLot } from "../services/inventoryService";
+
+const expiryWindowDays = 30;
+
+export default function Expiry() {
+  const [alerts, setAlerts] = useState<InventoryLot[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const metrics = useMemo(
+    () => ({
+      total: alerts.length,
+      critical: alerts.filter((item) => getDaysRemaining(item.expiryDate) <= 7).length,
+      affectedStock: alerts.reduce((sum, item) => sum + item.availableQuantity, 0),
+    }),
+    [alerts],
+  );
+
+  async function loadAlerts() {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const data = await inventoryService.getExpiringInventory(expiryWindowDays);
+      setAlerts(data);
+    } catch (loadError) {
+      setError(getApiErrorMessage(loadError));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadAlerts();
+  }, []);
+
+  return (
+    <section className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-black text-navy md:text-3xl">Expiry Management</h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted">Review near-expiry batches before they are sent to retailers and decide the next stock action.</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Metric icon={<ShieldAlert />} label="Expiry Alerts" value={String(metrics.total)} tone="text-warning" hint={`Next ${expiryWindowDays} days`} />
+        <Metric icon={<TriangleAlert />} label="Critical Batches" value={String(metrics.critical)} tone="text-error" hint="7 days or less" />
+        <Metric icon={<CalendarClock />} label="Affected Stock" value={String(metrics.affectedStock)} tone="text-primary" hint="Units to review" />
+      </div>
+
+      <Card>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-navy">Expiry Review List</h2>
+            <p className="text-sm text-muted">Professional batch-wise view of medicines that need expiry control.</p>
+          </div>
+          <Button className="gap-2" onClick={() => void loadAlerts()} variant="secondary">
+            <RefreshCcw className="h-4 w-4" />
+            Retry
+          </Button>
+        </div>
+
+        {isLoading ? <p className="py-8 text-center text-sm font-semibold text-muted">Loading expiry alerts...</p> : null}
+
+        {error ? (
+          <div className="rounded-lg border border-border bg-red-50 p-4 text-sm font-semibold text-error">
+            {error}
+          </div>
+        ) : null}
+
+        {!isLoading && !error ? (
+          <Table headers={["Medicine", "SKU", "Batch", "Expiry", "Days", "Quantity", "Severity", "Required Action"]}>
+            {alerts.map((item) => {
+              const daysRemaining = getDaysRemaining(item.expiryDate);
+              const severity = daysRemaining <= 7 ? "Critical" : "Warning";
+
+              return (
+                <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
+                  <Cell strong>{item.medicine.name}</Cell>
+                  <Cell>{item.medicine.sku}</Cell>
+                  <Cell>{item.batchNumber}</Cell>
+                  <Cell>{formatDate(item.expiryDate)}</Cell>
+                  <Cell>{formatDaysRemaining(daysRemaining)}</Cell>
+                  <Cell>{item.availableQuantity}</Cell>
+                  <Cell>
+                    <Badge tone={severity === "Critical" ? "red" : "orange"}>{severity}</Badge>
+                  </Cell>
+                  <Cell>{getActionText(daysRemaining)}</Cell>
+                </tr>
+              );
+            })}
+          </Table>
+        ) : null}
+        {!isLoading && !error && alerts.length === 0 ? <p className="py-8 text-center text-sm text-muted">No batches expiring in the next {expiryWindowDays} days.</p> : null}
+      </Card>
+    </section>
+  );
+}
+
+function getDaysRemaining(value: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiryDate = new Date(value);
+  expiryDate.setHours(0, 0, 0, 0);
+  return Math.ceil((expiryDate.getTime() - today.getTime()) / 86_400_000);
+}
+
+function formatDaysRemaining(days: number) {
+  if (days < 0) return "Expired";
+  if (days === 0) return "Today";
+  if (days === 1) return "1 day";
+  return `${days} days`;
+}
+
+function getActionText(days: number) {
+  if (days < 0) return "Do not dispatch; expired batch needs review.";
+  if (days <= 7) return "Hold dispatch and review batch urgently.";
+  return "Review before dispatch.";
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+  }).format(new Date(value));
+}

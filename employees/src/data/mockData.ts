@@ -1,0 +1,141 @@
+import type { EmployeeOrder, ExpiryItem, InventoryItem, ReturnItem } from "../types";
+
+export const incomingOrders: EmployeeOrder[] = [
+  {
+    id: "SDD-10482",
+    retailer: "CarePlus Medicals",
+    area: "Indiranagar",
+    receivedAt: "09:18 AM",
+    items: 24,
+    value: "Rs. 9,746",
+    priority: "High",
+    status: "New",
+  },
+  {
+    id: "SDD-10481",
+    retailer: "Namma Pharma",
+    area: "Jayanagar",
+    receivedAt: "09:05 AM",
+    items: 16,
+    value: "Rs. 14,220",
+    priority: "Normal",
+    status: "Verified",
+  },
+  {
+    id: "SDD-10480",
+    retailer: "Apollo Partner Store",
+    area: "Koramangala",
+    receivedAt: "08:42 AM",
+    items: 33,
+    value: "Rs. 27,980",
+    priority: "High",
+    status: "Picking",
+  },
+  {
+    id: "SDD-10479",
+    retailer: "MedTrust",
+    area: "Whitefield",
+    receivedAt: "08:11 AM",
+    items: 11,
+    value: "Rs. 6,410",
+    priority: "Normal",
+    status: "Packed",
+  },
+];
+
+export const inventoryItems: InventoryItem[] = [
+  {
+    id: "INV-001",
+    name: "Amoxicillin 500mg",
+    sku: "AMX-500",
+    batch: "AMX-B2406",
+    stock: 840,
+    expiry: "Mar 2027",
+    supplier: "Medline Labs",
+    status: "Healthy",
+  },
+  {
+    id: "INV-002",
+    name: "Atorvastatin 20mg",
+    sku: "ATO-020",
+    batch: "ATO-B1841",
+    stock: 92,
+    expiry: "Sep 2026",
+    supplier: "CureMax Pharma",
+    status: "Low",
+  },
+  {
+    id: "INV-003",
+    name: "Pantoprazole 40mg",
+    sku: "PAN-040",
+    batch: "PAN-B9912",
+    stock: 0,
+    expiry: "Jul 2026",
+    supplier: "AstraHealth",
+    status: "Reorder",
+  },
+  {
+    id: "INV-004",
+    name: "Telmisartan 40mg",
+    sku: "TEL-040",
+    batch: "TEL-B4502",
+    stock: 64,
+    expiry: "Aug 2026",
+    supplier: "Nova Remedies",
+    status: "Low",
+  },
+];
+
+export const expiryAlerts: ExpiryItem[] = [
+  {
+    id: "EXP-101",
+    name: "Pantoprazole 40mg",
+    batch: "PAN-B9912",
+    expiry: "Jul 2026",
+    stock: 0,
+    action: "Block dispatch and reorder replacement batch",
+    severity: "Critical",
+  },
+  {
+    id: "EXP-102",
+    name: "Telmisartan 40mg",
+    batch: "TEL-B4502",
+    expiry: "Aug 2026",
+    stock: 64,
+    action: "Notify retailers and move to priority sale",
+    severity: "Warning",
+  },
+  {
+    id: "EXP-103",
+    name: "Atorvastatin 20mg",
+    batch: "ATO-B1841",
+    expiry: "Sep 2026",
+    stock: 92,
+    action: "Review demand before next inward stock",
+    severity: "Warning",
+  },
+];
+
+export const returnItems: ReturnItem[] = [
+  {
+    id: "RET-2381",
+    retailer: "CarePlus Medicals",
+    reason: "Near expiry claim",
+    value: "Rs. 2,420",
+    status: "Inspect",
+  },
+  {
+    id: "RET-2379",
+    retailer: "HealthWay",
+    reason: "Damaged outer box",
+    value: "Rs. 840",
+    status: "Credit Note",
+  },
+  {
+    id: "RET-2374",
+    retailer: "Namma Pharma",
+    reason: "Batch recall",
+    value: "Rs. 5,190",
+    status: "Approved",
+  },
+];
