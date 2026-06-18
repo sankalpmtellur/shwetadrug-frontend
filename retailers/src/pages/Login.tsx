@@ -40,7 +40,7 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout title="Welcome" subtitle="Sign in with the username and password sent by admin after retailer approval.">
+    <AuthLayout title="Welcome" subtitle="Sign in to continue ordering medicines for your pharmacy.">
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block text-sm font-semibold text-navy">
           Username
@@ -76,11 +76,7 @@ export default function Login() {
           </div>
         </label>
 
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-2 text-muted">
-            <input type="checkbox" className="rounded border-border text-primary" />
-            Remember me
-          </label>
+        <div className="flex justify-end text-sm">
           <Link className="font-semibold text-primary" to="/forgot-password">
             Forgot password?
           </Link>
@@ -91,12 +87,7 @@ export default function Login() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-muted">
-        New retailer?{" "}
-        <Link className="font-semibold text-primary" to="/signup">
-          Request access
-        </Link>
-      </p>
+      <p className="mt-6 text-center text-sm text-muted">Don't have an account? <Link className="font-semibold text-primary" to="/signup">Sign up</Link></p>
     </AuthLayout>
   );
 }

@@ -9,6 +9,7 @@ import OrderConfirmed from "../pages/OrderConfirmed";
 import OrderHistory from "../pages/OrderHistory";
 import ForgotPassword from "../pages/ForgotPassword";
 import Profile from "../pages/Profile";
+import NotFound from "../pages/NotFound";
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
 
 function protectedPage(element: ReactElement) {
@@ -27,6 +28,7 @@ export function AppRoutes() {
       <Route path="/confirmed" element={protectedPage(<OrderConfirmed />)} />
       <Route path="/orders" element={protectedPage(<OrderHistory />)} />
       <Route path="/profile" element={protectedPage(<Profile />)} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

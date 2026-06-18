@@ -6,7 +6,6 @@ import {
   History,
   LogOut,
   MapPin,
-  Menu,
   ShoppingCart,
   User,
   UserRound,
@@ -18,12 +17,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { formatDefaultAddress, profileService } from "../../services/profileService";
 import type { DefaultAddress } from "../../types";
 
-type NavbarProps = {
-  showSidebarToggle: boolean;
-  onSidebarToggle: () => void;
-};
-
-export function Navbar({ showSidebarToggle, onSidebarToggle }: NavbarProps) {
+export function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [defaultAddress, setDefaultAddress] = useState<DefaultAddress | null>(null);
@@ -75,23 +69,12 @@ export function Navbar({ showSidebarToggle, onSidebarToggle }: NavbarProps) {
     <>
       <header className="border-b border-border bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-4 py-3 md:px-8">
-          {showSidebarToggle ? (
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-11 w-11 rounded-xl border border-border p-0"
-              onClick={onSidebarToggle}
-              aria-label="Toggle sidebar"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          ) : null}
-
           <Link
             to="/dashboard"
             className="min-w-0 flex-1 truncate text-base font-black text-primary sm:text-xl"
           >
-            Shweta Drug
+            <span className="lg:hidden">Shweta Drug</span>
+            <span className="hidden lg:inline">Shweta Drug Distributors</span>
           </Link>
 
           <button

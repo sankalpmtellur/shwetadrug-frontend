@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
@@ -34,12 +34,20 @@ function formatDate(value: string) {
 export default function OrderHistory() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [orders, setOrders] = useState<RetailerOrder[]>([]);
+  const [visibleCount, setVisibleCount] = useState(10);
   const [invoice, setInvoice] = useState<OrderInvoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const { reorderItems } = useCart();
   const selectedOrder = orders.find((order) => order.id === selectedOrderId);
+  const pageSize = useResponsivePageSize();
+  const visibleOrders = useMemo(() => orders.slice(0, visibleCount), [orders, visibleCount]);
+  const canLoadMore = visibleCount < orders.length;
+
+  useEffect(() => {
+    setVisibleCount(pageSize);
+  }, [pageSize]);
 
   async function loadOrders() {
     setIsLoading(true);
@@ -166,7 +174,7 @@ export default function OrderHistory() {
 
         {!isLoading && !errorMessage && orders.length ? (
           <div className="grid gap-3">
-            {orders.map((order) => (
+            {visibleOrders.map((order) => (
               <Card key={order.id} className="p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -198,6 +206,14 @@ export default function OrderHistory() {
                 </div>
               </Card>
             ))}
+          </div>
+        ) : null}
+
+        {!isLoading && !errorMessage && canLoadMore ? (
+          <div className="flex justify-center">
+            <Button type="button" variant="secondary" className="min-w-48" onClick={() => setVisibleCount((current) => current + pageSize)}>
+              Load More
+            </Button>
           </div>
         ) : null}
 
@@ -254,4 +270,20 @@ export default function OrderHistory() {
       </PageWrapper>
     </DashboardLayout>
   );
+}
+
+function useResponsivePageSize() {
+  const [pageSize, setPageSize] = useState(() => (typeof window === "undefined" || window.innerWidth < 1024 ? 10 : 20));
+
+  useEffect(() => {
+    function updatePageSize() {
+      setPageSize(window.innerWidth < 1024 ? 10 : 20);
+    }
+
+    updatePageSize();
+    window.addEventListener("resize", updatePageSize);
+    return () => window.removeEventListener("resize", updatePageSize);
+  }, []);
+
+  return pageSize;
 }
