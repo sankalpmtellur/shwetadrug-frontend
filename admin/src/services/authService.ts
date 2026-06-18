@@ -20,7 +20,6 @@ export type UserProfile = AuthUser & {
 type LoginResponse = {
   user: AuthUser;
   accessToken: string;
-  refreshToken: string;
 };
 
 type RefreshResponse = LoginResponse;

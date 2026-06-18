@@ -1,12 +1,12 @@
 import type { AuthResponse, User } from "../types/auth";
 
 const ACCESS_TOKEN_KEY = "sdd_employee_access_token";
-const REFRESH_TOKEN_KEY = "sdd_employee_refresh_token";
+const LEGACY_REFRESH_TOKEN_KEY = "sdd_employee_refresh_token";
 const USER_KEY = "sdd_employee_user";
 
 export function saveAuth(auth: AuthResponse) {
   localStorage.setItem(ACCESS_TOKEN_KEY, auth.accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, auth.refreshToken);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
   localStorage.setItem(USER_KEY, JSON.stringify(auth.user));
 }
 
@@ -16,10 +16,6 @@ export function saveUser(user: User) {
 
 export function getAccessToken() {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function getRefreshToken() {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
 export function getUser(): User | null {
@@ -36,7 +32,7 @@ export function getUser(): User | null {
 
 export function clearAuth() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
 }
 

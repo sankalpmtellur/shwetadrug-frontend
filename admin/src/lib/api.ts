@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type InternalAxiosRequestConfig } from "axios";
 import type { AxiosError } from "axios";
 
 export type ApiResponse<T> = {
@@ -18,6 +18,10 @@ export type ListMeta = {
   limit?: number;
   total?: number;
   totalPages?: number;
+};
+
+type RetryableRequest = InternalAxiosRequestConfig & {
+  _retry?: boolean;
 };
 
 export class ApiError extends Error {
@@ -61,6 +65,46 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as RetryableRequest | undefined;
+
+    if (
+      error.response?.status !== 401 ||
+      !originalRequest ||
+      originalRequest._retry ||
+      originalRequest.url?.includes("/auth/refresh-token")
+    ) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+
+    try {
+      const response = await axios.post<ApiResponse<{ accessToken: string; user: { role: string } }>>(
+        `${api.defaults.baseURL}/auth/refresh-token`,
+        {},
+        { withCredentials: true },
+      );
+
+      if (response.data.data.user.role !== "ADMIN") {
+        tokenStorage.clear();
+        window.location.assign("/login");
+        return Promise.reject(new ApiError("Only admin users can access the admin portal", 403));
+      }
+
+      tokenStorage.set(response.data.data.accessToken);
+      originalRequest.headers.Authorization = `Bearer ${response.data.data.accessToken}`;
+      return api(originalRequest);
+    } catch (refreshError) {
+      tokenStorage.clear();
+      window.location.assign("/login");
+      return Promise.reject(refreshError);
+    }
+  },
+);
 
 function toApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {

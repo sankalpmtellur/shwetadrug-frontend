@@ -1,5 +1,5 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { clearAuth, getAccessToken, getRefreshToken, saveAuth } from "./auth";
+import { clearAuth, getAccessToken, saveAuth } from "./auth";
 import type { ApiResponse, AuthResponse } from "../types/auth";
 
 type RetryableRequest = InternalAxiosRequestConfig & {
@@ -33,7 +33,7 @@ api.interceptors.response.use(
     try {
       const response = await axios.post<ApiResponse<AuthResponse>>(
         `${api.defaults.baseURL}/auth/refresh-token`,
-        { refreshToken: getRefreshToken() },
+        {},
         { withCredentials: true },
       );
 
