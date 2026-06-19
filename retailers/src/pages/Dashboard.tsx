@@ -33,13 +33,11 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [retryKey, setRetryKey] = useState(0);
-  const [visibleCount, setVisibleCount] = useState(0);
   const pageSize = usePageSize();
+  const pageKey = `${search}:${pageSize}`;
+  const [paging, setPaging] = useState({ key: pageKey, count: pageSize });
+  const visibleCount = paging.key === pageKey ? paging.count : pageSize;
   const { addItem, items, removeItem } = useCart();
-
-  useEffect(() => {
-    setVisibleCount(pageSize);
-  }, [pageSize, search]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -92,7 +90,7 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="sticky top-0 z-30 -mx-3 bg-background/95 px-3 pb-3 pt-1 backdrop-blur md:mx-0 md:px-0">
+        <div className="sticky top-0 z-40 -mx-3 border-b border-border bg-background px-3 py-3 shadow-sm md:-mx-6 md:px-6">
           <label className="relative block">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
             <input
@@ -228,7 +226,7 @@ export default function Dashboard() {
 
         {!isLoading && !errorMessage && canLoadMore ? (
           <div className="flex justify-center pt-2">
-            <Button type="button" variant="secondary" className="min-w-48" onClick={() => setVisibleCount((current) => current + pageSize)}>
+            <Button type="button" variant="secondary" className="min-w-48" onClick={() => setPaging({ key: pageKey, count: visibleCount + pageSize })}>
               Load More
             </Button>
           </div>

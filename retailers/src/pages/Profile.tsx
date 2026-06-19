@@ -53,7 +53,11 @@ export default function Profile() {
   }
 
   useEffect(() => {
-    void loadProfile();
+    const timeoutId = window.setTimeout(() => {
+      void loadProfile();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   function cancelEdit() {
@@ -184,32 +188,44 @@ export default function Profile() {
               </Card>
 
               <Card className="p-5">
-                <h2 className="text-xl font-black text-navy">{isEditing ? "Edit Profile" : "Profile Information"}</h2>
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-semibold text-navy">
-                    Owner Name
-                    <Input className="mt-2" value={profileForm.name} disabled={!isEditing} onChange={(event) => setProfileForm((current) => ({ ...current, name: event.target.value }))} />
-                  </label>
-                  <label className="block text-sm font-semibold text-navy">
-                    Mobile
-                    <Input className="mt-2" value={profileForm.phone} disabled={!isEditing} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "").slice(0, 10) }))} />
-                  </label>
-                  <label className="block text-sm font-semibold text-navy sm:col-span-2">
-                    Address
-                    <Input className="mt-2" value={addressForm.address} disabled={!isEditing} onChange={(event) => setAddressForm((current) => ({ ...current, address: event.target.value }))} />
-                  </label>
-                  <label className="block text-sm font-semibold text-navy">
-                    City
-                    <Input className="mt-2" value={addressForm.city} disabled={!isEditing} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} />
-                  </label>
-                  <label className="block text-sm font-semibold text-navy">
-                    State
-                    <Input className="mt-2" value={addressForm.state} disabled={!isEditing} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} />
-                  </label>
-                  <label className="block text-sm font-semibold text-navy sm:col-span-2">
-                    Pincode
-                    <Input className="mt-2" value={addressForm.pincode} disabled={!isEditing} onChange={(event) => setAddressForm((current) => ({ ...current, pincode: event.target.value.replace(/\D/g, "").slice(0, 6) }))} />
-                  </label>
+                <h2 className="text-xl font-black text-navy">{isEditing ? "Edit Profile & Address" : "Profile Information"}</h2>
+
+                <div className="mt-5 space-y-6">
+                  <section>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-muted">Profile Information</h3>
+                    <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                      <label className="block text-sm font-semibold text-navy">
+                        Owner Name
+                        <Input className="mt-2" value={profileForm.name} disabled={!isEditing} onChange={(event) => setProfileForm((current) => ({ ...current, name: event.target.value }))} />
+                      </label>
+                      <label className="block text-sm font-semibold text-navy">
+                        Mobile
+                        <Input className="mt-2" value={profileForm.phone} disabled={!isEditing} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "").slice(0, 10) }))} />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className="border-t border-border pt-5">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-muted">Address Information</h3>
+                    <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                      <label className="block text-sm font-semibold text-navy sm:col-span-2">
+                        Address
+                        <Input className="mt-2" value={addressForm.address} disabled={!isEditing} onChange={(event) => setAddressForm((current) => ({ ...current, address: event.target.value }))} />
+                      </label>
+                      <label className="block text-sm font-semibold text-navy">
+                        City
+                        <Input className="mt-2" value={addressForm.city} disabled={!isEditing} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} />
+                      </label>
+                      <label className="block text-sm font-semibold text-navy">
+                        State
+                        <Input className="mt-2" value={addressForm.state} disabled={!isEditing} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} />
+                      </label>
+                      <label className="block text-sm font-semibold text-navy sm:col-span-2">
+                        Pincode
+                        <Input className="mt-2" value={addressForm.pincode} disabled={!isEditing} onChange={(event) => setAddressForm((current) => ({ ...current, pincode: event.target.value.replace(/\D/g, "").slice(0, 6) }))} />
+                      </label>
+                    </div>
+                  </section>
                 </div>
               </Card>
             </div>

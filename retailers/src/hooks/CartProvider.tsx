@@ -1,25 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import type { CartItem, Medicine } from "../types";
 import { cartService } from "../services/cartService";
 import { clearCartItems, loadCartItems, saveCartItems } from "../services/cartStorage";
+import { CartContext, type CartContextValue } from "./cartContext";
 import { useAuth } from "./useAuth";
-
-type CartContextValue = {
-  items: CartItem[];
-  count: number;
-  subtotal: number;
-  isLoading: boolean;
-  error: string;
-  addItem: (medicine: Medicine, qty: number) => Promise<void>;
-  setItemQuantity: (medicineId: string, qty: number) => Promise<void>;
-  removeItem: (medicineId: string) => Promise<void>;
-  reorderItems: (items: CartItem[]) => Promise<void>;
-  clearCart: () => Promise<void>;
-  quickReorder: () => void;
-};
-
-const CartContext = createContext<CartContextValue | null>(null);
 
 function buildLocalItem(medicine: Medicine, qty: number): CartItem {
   return {
@@ -58,50 +43,52 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isAuthLoading) return;
 
-    if (!isRetailerSession) {
-      setItems(loadCartItems());
-      mergedLocalCartForUser.current = null;
-      return;
-    }
-
     let isMounted = true;
+    const timeoutId = window.setTimeout(() => {
+      if (!isRetailerSession) {
+        setItems(loadCartItems());
+        mergedLocalCartForUser.current = null;
+        return;
+      }
 
-    async function loadBackendCart() {
-      setIsLoading(true);
-      setError("");
+      async function loadBackendCart() {
+        setIsLoading(true);
+        setError("");
 
-      try {
-        const localItems = loadCartItems();
-        let nextItems = await cartService.getCart();
+        try {
+          const localItems = loadCartItems();
+          let nextItems = await cartService.getCart();
 
-        if (localItems.length && mergedLocalCartForUser.current !== user?.id) {
-          for (const item of localItems) {
-            nextItems = await cartService.addItem(item.medicineId, item.qty);
+          if (localItems.length && mergedLocalCartForUser.current !== user?.id) {
+            for (const item of localItems) {
+              nextItems = await cartService.addItem(item.medicineId, item.qty);
+            }
+            clearCartItems();
+            mergedLocalCartForUser.current = user?.id ?? null;
           }
-          clearCartItems();
-          mergedLocalCartForUser.current = user?.id ?? null;
-        }
 
-        if (isMounted) {
-          setItems(nextItems);
-        }
-      } catch {
-        if (isMounted) {
-          const message = "Could not load cart. Please refresh and try again.";
-          setError(message);
-          toast.error(message);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+          if (isMounted) {
+            setItems(nextItems);
+          }
+        } catch {
+          if (isMounted) {
+            const message = "Could not load cart. Please refresh and try again.";
+            setError(message);
+            toast.error(message);
+          }
+        } finally {
+          if (isMounted) {
+            setIsLoading(false);
+          }
         }
       }
-    }
 
-    void loadBackendCart();
+      void loadBackendCart();
+    }, 0);
 
     return () => {
       isMounted = false;
+      window.clearTimeout(timeoutId);
     };
   }, [isAuthLoading, isRetailerSession, user?.id]);
 
@@ -226,14 +213,4 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [error, isLoading, isRetailerSession, items, runCartAction]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
-}
-
-export function useCart() {
-  const context = useContext(CartContext);
-
-  if (!context) {
-    throw new Error("useCart must be used inside CartProvider");
-  }
-
-  return context;
 }

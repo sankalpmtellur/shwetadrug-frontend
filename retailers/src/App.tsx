@@ -1,8 +1,8 @@
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AppRoutes } from "./routes/AppRoutes";
-import { AuthProvider } from "./hooks/useAuth";
-import { CartProvider } from "./hooks/useCart";
+import { AuthProvider } from "./hooks/AuthProvider";
+import { CartProvider } from "./hooks/CartProvider";
 
 function App() {
   return (

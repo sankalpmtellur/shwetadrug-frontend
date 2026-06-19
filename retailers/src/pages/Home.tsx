@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import type { ReactNode } from "react";
-import { ArrowRight, CheckCircle2, PackageSearch, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 function Home() {
   return (
@@ -32,28 +31,9 @@ function Home() {
               </Link>
             </div>
           </div>
-
-          <div className="grid content-center gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <Feature icon={<PackageSearch />} title="Live catalogue" text="Find stock, pack sizes, and pricing from the retailer dashboard." />
-            <Feature icon={<CheckCircle2 />} title="Clean checkout" text="Review items, choose payment, and place orders in a few taps." />
-            <Feature icon={<Truck />} title="Order tracking" text="Keep previous bills, invoices, and order history in one place." />
-            <Feature icon={<ShieldCheck />} title="Verified access" text="Retailer accounts stay protected behind approved login access." />
-          </div>
         </div>
       </section>
     </main>
-  );
-}
-
-function Feature({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface-soft p-4">
-      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-white text-primary">
-        {icon}
-      </div>
-      <h2 className="text-base font-black text-navy">{title}</h2>
-      <p className="mt-1 text-sm font-semibold leading-6 text-muted">{text}</p>
-    </div>
   );
 }
 

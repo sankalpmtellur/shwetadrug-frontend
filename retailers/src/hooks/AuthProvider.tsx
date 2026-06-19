@@ -1,20 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AUTH_CHANGED_EVENT, clearAuth, getAccessToken, getUser, saveUser } from "../lib/auth";
 import { authService } from "../services/authService";
 import { profileService } from "../services/profileService";
 import type { RetailerProfile } from "../types";
 import type { User } from "../types/auth";
-
-type AuthContextValue = {
-  user: User | null;
-  profile: RetailerProfile | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  logout: () => Promise<void>;
-  refreshProfile: () => Promise<RetailerProfile | null>;
-};
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, type AuthContextValue } from "./authContext";
 
 function profileToUser(profile: RetailerProfile): User {
   return {
@@ -79,14 +69,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void restoreSession();
+    const timeoutId = window.setTimeout(() => {
+      void restoreSession();
+    }, 0);
 
     function handleAuthChanged() {
       void restoreSession();
     }
 
     window.addEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
-    return () => window.removeEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+    };
   }, [restoreSession]);
 
   const logout = useCallback(async () => {
@@ -112,14 +107,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-
-  return context;
 }

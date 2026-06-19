@@ -55,4 +55,11 @@ export const orderService = {
     const response = await api.get<ApiResponse<OrderInvoice>>(`/orders/${orderId}/invoice`);
     return response.data.data;
   },
+
+  async downloadOrderInvoicePdf(orderId: string) {
+    const response = await api.get<Blob>(`/orders/${orderId}/invoice/pdf`, {
+      responseType: "blob",
+    });
+    return response.data;
+  },
 };

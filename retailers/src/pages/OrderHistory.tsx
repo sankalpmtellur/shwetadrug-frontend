@@ -34,7 +34,6 @@ function formatDate(value: string) {
 export default function OrderHistory() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [orders, setOrders] = useState<RetailerOrder[]>([]);
-  const [visibleCount, setVisibleCount] = useState(10);
   const [invoice, setInvoice] = useState<OrderInvoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
@@ -42,12 +41,10 @@ export default function OrderHistory() {
   const { reorderItems } = useCart();
   const selectedOrder = orders.find((order) => order.id === selectedOrderId);
   const pageSize = useResponsivePageSize();
+  const [paging, setPaging] = useState({ pageSize, count: pageSize });
+  const visibleCount = paging.pageSize === pageSize ? paging.count : pageSize;
   const visibleOrders = useMemo(() => orders.slice(0, visibleCount), [orders, visibleCount]);
   const canLoadMore = visibleCount < orders.length;
-
-  useEffect(() => {
-    setVisibleCount(pageSize);
-  }, [pageSize]);
 
   async function loadOrders() {
     setIsLoading(true);
@@ -64,7 +61,11 @@ export default function OrderHistory() {
   }
 
   useEffect(() => {
-    void loadOrders();
+    const timeoutId = window.setTimeout(() => {
+      void loadOrders();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   async function openBill(orderId: string) {
@@ -97,37 +98,40 @@ export default function OrderHistory() {
       }));
   };
 
-  const downloadInvoice = () => {
+  const downloadInvoice = async () => {
     if (!selectedOrder) return;
-    const items = invoice?.items.map((item) => ({
-      name: item.medicine.name,
-      qty: item.quantity,
-      price: item.lineTotal,
-    })) ?? selectedOrder.items.map((item) => ({
-      name: item.medicineName,
-      qty: item.quantity,
-      price: item.lineTotal,
-    }));
-    const lines = items
-      .map((item) => `${item.name} | Qty: ${item.qty} | Price: ${currency(item.price)}`)
-      .join("\n");
-    const invoiceNo = invoice?.invoice.invoiceNo ?? selectedOrder.invoice?.invoiceNo ?? selectedOrder.orderNo;
-    const content = `Invoice ${invoiceNo}\nDate: ${formatDate(selectedOrder.placedAt)}\n\n${lines}\n\nTotal: ${currency(selectedOrder.totalAmount)}`;
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${selectedOrder.orderNo}-invoice.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+
+    try {
+      const blob = await orderService.downloadOrderInvoicePdf(selectedOrder.id);
+      saveInvoiceBlob(blob, selectedOrder);
+    } catch {
+      toast.error("Could not download invoice PDF.");
+    }
   };
 
-  const shareInvoice = () => {
+  const shareInvoice = async () => {
     if (!selectedOrder) return;
-    const message = encodeURIComponent(
-      `Invoice ${invoice?.invoice.invoiceNo ?? selectedOrder.invoice?.invoiceNo ?? selectedOrder.orderNo} (${formatDate(selectedOrder.placedAt)}) total ${currency(selectedOrder.totalAmount)}`
-    );
-    window.open(`https://wa.me/?text=${message}`, "_blank", "noopener,noreferrer");
+
+    try {
+      const blob = await orderService.downloadOrderInvoicePdf(selectedOrder.id);
+      const invoiceNo = invoice?.invoice.invoiceNo ?? selectedOrder.invoice?.invoiceNo ?? selectedOrder.orderNo;
+      const file = new File([blob], `${selectedOrder.orderNo}-invoice.pdf`, { type: "application/pdf" });
+      const shareData = {
+        files: [file],
+        title: `Invoice ${invoiceNo}`,
+        text: `Invoice ${invoiceNo} for ${currency(selectedOrder.totalAmount)}`,
+      };
+
+      if (navigator.canShare?.(shareData)) {
+        await navigator.share(shareData);
+        return;
+      }
+
+      saveInvoiceBlob(blob, selectedOrder);
+      toast.success("Invoice PDF downloaded. Share it from your device.");
+    } catch {
+      toast.error("Could not share invoice PDF.");
+    }
   };
 
   function handleReorder(order: RetailerOrder) {
@@ -211,7 +215,7 @@ export default function OrderHistory() {
 
         {!isLoading && !errorMessage && canLoadMore ? (
           <div className="flex justify-center">
-            <Button type="button" variant="secondary" className="min-w-48" onClick={() => setVisibleCount((current) => current + pageSize)}>
+            <Button type="button" variant="secondary" className="min-w-48" onClick={() => setPaging({ pageSize, count: visibleCount + pageSize })}>
               Load More
             </Button>
           </div>
@@ -261,7 +265,7 @@ export default function OrderHistory() {
                   Download Invoice
                 </Button>
                 <Button type="button" onClick={shareInvoice}>
-                  Share on WhatsApp
+                  Share PDF
                 </Button>
               </div>
             </div>
@@ -270,6 +274,17 @@ export default function OrderHistory() {
       </PageWrapper>
     </DashboardLayout>
   );
+}
+
+function saveInvoiceBlob(blob: Blob, order: RetailerOrder) {
+  const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${order.orderNo}-invoice.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function useResponsivePageSize() {
