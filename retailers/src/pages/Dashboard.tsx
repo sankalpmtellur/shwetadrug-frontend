@@ -120,9 +120,9 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="sticky top-0 z-50 isolate -mx-3 overflow-hidden border-b border-border bg-background px-3 pb-4 pt-3 shadow-[0_16px_30px_rgba(11,28,48,0.12)] md:-mx-8 md:px-8">
+        <div className="sticky top-0 z-[80] isolate -mx-3 flex min-h-[92px] items-center overflow-hidden border-b border-border bg-background px-3 py-4 shadow-[0_18px_34px_rgba(11,28,48,0.16)] before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-background after:absolute after:inset-x-0 after:bottom-[-18px] after:h-[18px] after:bg-background md:-mx-8 md:px-8">
           <div className="absolute inset-0 -z-10 bg-background" />
-          <div className="mx-auto max-w-4xl rounded-lg bg-background">
+          <div className="relative z-10 mx-auto w-full max-w-4xl rounded-lg bg-background">
             <label className="relative block">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
               <input
@@ -222,13 +222,13 @@ export default function Dashboard() {
                             onClick={() => void confirmQuantity(medicine)}
                             className="h-10 rounded-lg bg-primary px-3 text-sm font-black text-white transition hover:bg-primary/90"
                           >
-                            {activeAction === "buy" ? "Continue" : "Confirm"}
+                            {activeAction === "buy" ? "Go to Checkout" : "Add"}
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <p className="mt-2 text-sm font-semibold leading-5 text-muted">
-                        Choose an action, then enter the exact quantity you need.
+                      <p className="mt-2 min-h-[40px] text-sm font-semibold leading-5 text-muted">
+                        Tap Add to Cart or Buy, then enter the exact quantity.
                       </p>
                     )}
                   </div>
@@ -254,6 +254,16 @@ export default function Dashboard() {
                         Buy
                       </Button>
                     </div>
+
+                    {isInCart && !isOut ? (
+                      <button
+                        type="button"
+                        onClick={() => navigate("/checkout")}
+                        className="mt-2 h-10 w-full rounded-lg bg-surface-soft px-3 text-sm font-black text-primary transition hover:bg-surface-strong"
+                      >
+                        View Checkout
+                      </button>
+                    ) : null}
 
                     {isOut ? (
                       <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-center text-xs font-black text-error">

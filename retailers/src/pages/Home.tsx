@@ -9,9 +9,9 @@ function Home() {
         <img
           src={heroImage}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover object-[62%_center] sm:object-center"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(248,249,255,.98)_0%,rgba(248,249,255,.9)_36%,rgba(248,249,255,.5)_66%,rgba(248,249,255,.18)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(248,249,255,.98)_0%,rgba(248,249,255,.9)_42%,rgba(248,249,255,.64)_100%)] md:bg-[linear-gradient(90deg,rgba(248,249,255,.98)_0%,rgba(248,249,255,.92)_38%,rgba(248,249,255,.55)_68%,rgba(248,249,255,.16)_100%)]" />
 
         <div className="relative mx-auto flex w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
           <nav className="flex items-center justify-between gap-4">
@@ -32,7 +32,7 @@ function Home() {
             </div>
           </nav>
 
-          <div className="flex flex-1 items-center py-12 sm:py-16">
+          <div className="grid flex-1 items-center gap-8 py-10 sm:py-14 md:grid-cols-[minmax(0,1fr)_minmax(260px,.7fr)] lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,.95fr)]">
             <div className="max-w-2xl rounded-none">
               <p className="text-xs font-black uppercase tracking-widest text-primary">Wholesale medicine ordering</p>
               <h1 className="mt-4 text-4xl font-black leading-tight text-navy sm:text-5xl lg:text-6xl">
@@ -61,6 +61,7 @@ function Home() {
                 </Link>
               </div>
             </div>
+            <div className="hidden min-h-[420px] md:block" aria-hidden="true" />
           </div>
         </div>
       </section>

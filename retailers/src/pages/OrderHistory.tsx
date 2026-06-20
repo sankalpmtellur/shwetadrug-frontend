@@ -236,8 +236,8 @@ export default function OrderHistory() {
           onClose={() => setSelectedOrderId(null)}
         >
           {selectedOrder ? (
-            <div className="space-y-4">
-              <div className="rounded-xl bg-surface-soft p-4">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="rounded-lg bg-surface-soft p-3 sm:rounded-xl sm:p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-muted">
                   Order Date
                 </p>
@@ -247,25 +247,25 @@ export default function OrderHistory() {
                 </p>
               </div>
 
-              <div className="divide-y divide-border rounded-xl border border-border">
+              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border sm:rounded-xl">
                 {(invoice?.items ?? selectedOrder.items).map((item) => {
                   const name = "medicine" in item ? item.medicine.name : item.medicineName;
                   const quantity = "medicine" in item ? item.quantity : item.quantity;
                   const price = "medicine" in item ? item.lineTotal : item.lineTotal;
 
-                  return <div key={item.id} className="grid grid-cols-[1fr_auto] gap-3 p-4">
-                    <div>
-                      <p className="font-bold text-navy">{name}</p>
+                  return <div key={item.id} className="grid gap-2 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3 sm:p-4">
+                    <div className="min-w-0">
+                      <p className="break-words font-bold leading-5 text-navy">{name}</p>
                       <p className="text-sm text-muted">Quantity: {quantity}</p>
                     </div>
-                    <p className="font-black text-primary">{currency(price)}</p>
+                    <p className="text-right font-black text-primary sm:text-left">{currency(price)}</p>
                   </div>;
                 })}
               </div>
 
               {isInvoiceLoading ? <p className="text-sm font-semibold text-muted">Loading invoice details...</p> : null}
 
-              <div className="flex items-center justify-between rounded-xl bg-primary px-4 py-3 text-white">
+              <div className="flex flex-col gap-1 rounded-lg bg-primary px-4 py-3 text-white sm:flex-row sm:items-center sm:justify-between sm:rounded-xl">
                 <span className="font-bold">Total</span>
                 <span className="text-lg font-black">{currency(invoice?.order.totalAmount ?? selectedOrder.totalAmount)}</span>
               </div>
