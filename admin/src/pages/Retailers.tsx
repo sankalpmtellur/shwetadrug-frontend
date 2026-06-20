@@ -9,7 +9,7 @@ import { retailerService } from "../services/retailerService";
 import type { RetailerAccount } from "../services/retailerService";
 import type { ListMeta } from "../services/inventoryService";
 
-const retailerStatuses = ["PENDING_VERIFICATION", "ACTIVE", "REVIEW", "REJECTED", "SUSPENDED"];
+const retailerStatuses = ["ACTIVE", "REVIEW", "REJECTED", "SUSPENDED"];
 
 function formatCount(value: number | null | undefined) {
   return typeof value === "number" ? new Intl.NumberFormat("en-IN").format(value) : "-";
@@ -45,6 +45,7 @@ export default function Retailers() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [temporaryPasswords, setTemporaryPasswords] = useState<Record<string, string>>({});
 
   const loadRetailers = useCallback(async () => {
     setIsLoading(true);
@@ -65,18 +66,36 @@ export default function Retailers() {
     void loadRetailers();
   }, [loadRetailers]);
 
-  async function handleStatusChange(id: string, status: string) {
+  function updateTemporaryPassword(id: string, value: string) {
+    setTemporaryPasswords((current) => ({ ...current, [id]: value }));
+  }
+
+  async function handleStatusChange(id: string, status: string, temporaryPassword?: string) {
     setUpdatingId(id);
     setActionError(null);
 
     try {
-      const result = await retailerService.updateRetailerStatus(id, status);
+      const result = await retailerService.updateRetailerStatus(id, status, temporaryPassword);
       setRetailers((current) => current.map((row) => (row.id === id ? result.data : row)));
+      setTemporaryPasswords((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
     } catch (statusError) {
       setActionError(statusError instanceof Error ? statusError.message : "Unable to update retailer status");
     } finally {
       setUpdatingId(null);
     }
+  }
+
+  function approveRetailer(row: RetailerAccount) {
+    const temporaryPassword = temporaryPasswords[row.id]?.trim() ?? "";
+    if (temporaryPassword.length < 8) {
+      setActionError("Temporary password must be at least 8 characters.");
+      return;
+    }
+    void handleStatusChange(row.id, "ACTIVE", temporaryPassword);
   }
 
   const outstandingTotal = useMemo(() => retailers.reduce((sum, row) => sum + row.outstandingBalance, 0), [retailers]);
@@ -121,18 +140,39 @@ export default function Retailers() {
                   <Badge tone={getStatusTone(row.status)}>{row.status.replaceAll("_", " ")}</Badge>
                 </Cell>
                 <Cell>
-                  <select
-                    className="h-10 rounded-lg border border-border bg-white px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    value={row.status}
-                    onChange={(event) => void handleStatusChange(row.id, event.target.value)}
-                    disabled={updatingId === row.id}
-                  >
-                    {retailerStatuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status.replaceAll("_", " ")}
-                      </option>
-                    ))}
-                  </select>
+                  {row.status === "PENDING_VERIFICATION" ? (
+                    <div className="flex min-w-64 flex-col gap-2">
+                      <input
+                        className="h-10 rounded-lg border border-border bg-white px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                        disabled={updatingId === row.id}
+                        onChange={(event) => updateTemporaryPassword(row.id, event.target.value)}
+                        placeholder="Temporary Password"
+                        type="password"
+                        value={temporaryPasswords[row.id] ?? ""}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button className="h-9 px-3" disabled={updatingId === row.id} onClick={() => approveRetailer(row)}>
+                          Approve
+                        </Button>
+                        <Button className="h-9 px-3" disabled={updatingId === row.id} onClick={() => void handleStatusChange(row.id, "REJECTED")} variant="secondary">
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <select
+                      className="h-10 rounded-lg border border-border bg-white px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                      value={row.status}
+                      onChange={(event) => void handleStatusChange(row.id, event.target.value)}
+                      disabled={updatingId === row.id}
+                    >
+                      {retailerStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {status.replaceAll("_", " ")}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </Cell>
               </tr>
             ))}

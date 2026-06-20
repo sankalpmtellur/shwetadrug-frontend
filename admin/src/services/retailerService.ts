@@ -7,8 +7,8 @@ export type RetailerAccount = {
   ownerName: string;
   email: string;
   mobile: string;
-  gstNumber: string;
-  drugLicenseNumber: string;
+  gstNumber: string | null;
+  drugLicenseNumber: string | null;
   status: string;
   creditLimit: number;
   outstandingBalance: number;
@@ -44,7 +44,7 @@ export const retailerService = {
     };
   },
 
-  updateRetailerStatus(id: string, status: string) {
-    return apiResult<RetailerAccount>(api.patch(`/retailers/${id}`, { status }));
+  updateRetailerStatus(id: string, status: string, temporaryPassword?: string) {
+    return apiResult<RetailerAccount>(api.patch(`/retailers/${id}`, { status, temporaryPassword }));
   },
 };
