@@ -59,7 +59,29 @@ export const orderService = {
   async downloadOrderInvoicePdf(orderId: string) {
     const response = await api.get<Blob>(`/orders/${orderId}/invoice/pdf`, {
       responseType: "blob",
+      headers: { Accept: "application/pdf" },
     });
-    return response.data;
+    return ensurePdfBlob(response.data);
   },
 };
+
+async function ensurePdfBlob(blob: Blob) {
+  const header = await blob.slice(0, 5).text();
+
+  if (blob.type.includes("application/pdf") || header === "%PDF-") {
+    return blob.type.includes("application/pdf") ? blob : new Blob([blob], { type: "application/pdf" });
+  }
+
+  let message = "Invoice PDF could not be generated. Please try again.";
+
+  if (blob.type.includes("application/json")) {
+    try {
+      const error = JSON.parse(await blob.text()) as { message?: string };
+      message = error.message ?? message;
+    } catch {
+      message = "Invoice PDF could not be generated. Please try again.";
+    }
+  }
+
+  throw new Error(message);
+}

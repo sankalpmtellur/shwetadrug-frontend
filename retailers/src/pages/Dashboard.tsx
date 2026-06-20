@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Info, Minus, PackageCheck, Search, ShoppingBag, ShoppingCart, Trash2 } from "lucide-react";
+import { AlertCircle, Info, Minus, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
 import { DashboardLayout } from "../layouts/DashboardLayout";
@@ -80,7 +80,7 @@ export default function Dashboard() {
 
   const quantityFor = (id: string, isOut: boolean) => {
     if (isOut) return 0;
-    return quantities[id] ?? 10;
+    return quantities[id] ?? 1;
   };
 
   const updateQty = (id: string, value: number) => {
@@ -90,17 +90,19 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="sticky top-0 z-40 -mx-3 border-b border-border bg-background px-3 py-3 shadow-sm md:-mx-6 md:px-6">
-          <label className="relative block">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search medicine..."
-              className="h-12 w-full rounded-lg border border-border bg-white py-3 pl-12 pr-4 text-base font-semibold text-navy shadow-sm outline-none placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10"
-            />
-          </label>
+        <div className="sticky top-0 z-30 -mx-3 border-b border-border bg-background px-3 pb-4 pt-3 shadow-[0_14px_28px_rgba(11,28,48,0.08)] md:-mx-8 md:px-8">
+          <div className="mx-auto max-w-4xl">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by medicine name, SKU, generic name..."
+                className="h-14 w-full rounded-lg border border-border bg-white py-4 pl-12 pr-4 text-base font-semibold text-navy shadow-sm outline-none placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10"
+              />
+            </label>
+          </div>
         </div>
 
         {isLoading ? (
@@ -172,6 +174,8 @@ export default function Dashboard() {
                       <input
                         type="number"
                         min="0"
+                        step="1"
+                        inputMode="numeric"
                         disabled={isOut}
                         value={qty}
                         onChange={(event) => updateQty(medicine.id, Number(event.target.value))}
@@ -181,12 +185,29 @@ export default function Dashboard() {
                       <button
                         type="button"
                         disabled={isOut}
-                        onClick={() => updateQty(medicine.id, qty + 10)}
-                        className="grid w-14 place-items-center text-xs font-black text-primary disabled:cursor-not-allowed disabled:text-muted"
-                        aria-label={`Add 10 ${medicine.name}`}
+                        onClick={() => updateQty(medicine.id, qty + 1)}
+                        className="grid w-11 place-items-center text-primary disabled:cursor-not-allowed disabled:text-muted"
+                        aria-label={`Increase ${medicine.name} quantity`}
                       >
-                        +10
+                        <Plus className="h-4 w-4" />
                       </button>
+                    </div>
+                    <div className="mt-2 grid grid-cols-4 gap-2">
+                      {[1, 5, 10, 25].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          disabled={isOut}
+                          onClick={() => updateQty(medicine.id, preset)}
+                          className={`h-8 rounded-md border text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                            qty === preset
+                              ? "border-primary bg-primary text-white"
+                              : "border-border bg-white text-muted hover:border-primary hover:text-primary"
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
                     </div>
                   </div>
 

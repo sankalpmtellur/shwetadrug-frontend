@@ -37,6 +37,8 @@ export default function OrderHistory() {
   const [invoice, setInvoice] = useState<OrderInvoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+  const [isSharingInvoice, setIsSharingInvoice] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const { reorderItems } = useCart();
   const selectedOrder = orders.find((order) => order.id === selectedOrderId);
@@ -101,36 +103,43 @@ export default function OrderHistory() {
   const downloadInvoice = async () => {
     if (!selectedOrder) return;
 
+    setIsDownloadingInvoice(true);
     try {
       const blob = await orderService.downloadOrderInvoicePdf(selectedOrder.id);
       saveInvoiceBlob(blob, selectedOrder);
-    } catch {
-      toast.error("Could not download invoice PDF.");
+      toast.success("Invoice PDF downloaded.");
+    } catch (error) {
+      toast.error(getInvoiceErrorMessage(error, "Could not download invoice PDF."));
+    } finally {
+      setIsDownloadingInvoice(false);
     }
   };
 
   const shareInvoice = async () => {
     if (!selectedOrder) return;
 
+    setIsSharingInvoice(true);
     try {
       const blob = await orderService.downloadOrderInvoicePdf(selectedOrder.id);
       const invoiceNo = invoice?.invoice.invoiceNo ?? selectedOrder.invoice?.invoiceNo ?? selectedOrder.orderNo;
-      const file = new File([blob], `${selectedOrder.orderNo}-invoice.pdf`, { type: "application/pdf" });
-      const shareData = {
+      const file = new File([blob], getInvoiceFileName(selectedOrder), { type: "application/pdf" });
+      const shareData: ShareData = {
         files: [file],
         title: `Invoice ${invoiceNo}`,
         text: `Invoice ${invoiceNo} for ${currency(selectedOrder.totalAmount)}`,
       };
 
-      if (navigator.canShare?.(shareData)) {
+      if (navigator.share && navigator.canShare?.(shareData)) {
         await navigator.share(shareData);
         return;
       }
 
       saveInvoiceBlob(blob, selectedOrder);
       toast.success("Invoice PDF downloaded. Share it from your device.");
-    } catch {
-      toast.error("Could not share invoice PDF.");
+    } catch (error) {
+      toast.error(getInvoiceErrorMessage(error, "Could not share invoice PDF."));
+    } finally {
+      setIsSharingInvoice(false);
     }
   };
 
@@ -261,11 +270,11 @@ export default function OrderHistory() {
                 <span className="text-lg font-black">{currency(invoice?.order.totalAmount ?? selectedOrder.totalAmount)}</span>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                <Button type="button" variant="secondary" onClick={downloadInvoice}>
-                  Download Invoice
+                <Button type="button" variant="secondary" onClick={downloadInvoice} disabled={isDownloadingInvoice || isSharingInvoice}>
+                  {isDownloadingInvoice ? "Downloading..." : "Download Invoice"}
                 </Button>
-                <Button type="button" onClick={shareInvoice}>
-                  Share PDF
+                <Button type="button" onClick={shareInvoice} disabled={isDownloadingInvoice || isSharingInvoice}>
+                  {isSharingInvoice ? "Preparing..." : "Share PDF"}
                 </Button>
               </div>
             </div>
@@ -280,11 +289,20 @@ function saveInvoiceBlob(blob: Blob, order: RetailerOrder) {
   const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${order.orderNo}-invoice.pdf`;
+  link.download = getInvoiceFileName(order);
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function getInvoiceFileName(order: RetailerOrder) {
+  return `${order.orderNo}-invoice.pdf`.replace(/[^a-zA-Z0-9._-]/g, "-");
+}
+
+function getInvoiceErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
 }
 
 function useResponsivePageSize() {
