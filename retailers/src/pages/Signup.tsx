@@ -11,6 +11,7 @@ const initialForm = {
   shopName: "",
   email: "",
   gstNumber: "",
+  drugLicenseNumber: "",
   phone: "",
   ownerName: "",
   password: "",
@@ -35,11 +36,8 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      await authService.retailerSignup({
-        ...form,
-        drugLicenseNumber: "TO_BE_PROVIDED",
-      });
-      toast.success("Account created. Please login.");
+      await authService.retailerSignup(form);
+      toast.success("Signup submitted. Admin approval is required before login.");
       navigate("/login", { replace: true });
     } catch {
       toast.error("Could not create account");
@@ -60,8 +58,8 @@ export default function Signup() {
           <Input className="mt-2" type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} placeholder="owner@example.com" required />
         </label>
         <label className="block text-sm font-semibold text-navy">
-          GST Number
-          <Input className="mt-2" value={form.gstNumber} onChange={(event) => updateField("gstNumber", event.target.value)} placeholder="GST registration number" required />
+          GST Number <span className="font-medium text-muted">(optional)</span>
+          <Input className="mt-2" value={form.gstNumber} onChange={(event) => updateField("gstNumber", event.target.value)} placeholder="GST registration number" />
         </label>
         <label className="block text-sm font-semibold text-navy">
           Mobile
@@ -70,6 +68,10 @@ export default function Signup() {
         <label className="block text-sm font-semibold text-navy">
           Owner Name
           <Input className="mt-2" value={form.ownerName} onChange={(event) => updateField("ownerName", event.target.value)} placeholder="Owner full name" required />
+        </label>
+        <label className="block text-sm font-semibold text-navy">
+          Drug License Number <span className="font-medium text-muted">(optional)</span>
+          <Input className="mt-2" value={form.drugLicenseNumber} onChange={(event) => updateField("drugLicenseNumber", event.target.value)} placeholder="Drug license number" />
         </label>
         <label className="block text-sm font-semibold text-navy">
           Password

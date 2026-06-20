@@ -34,8 +34,8 @@ export type RetailerSignupPayload = {
   phone: string;
   password: string;
   shopName: string;
-  gstNumber: string;
-  drugLicenseNumber: string;
+  gstNumber?: string;
+  drugLicenseNumber?: string;
   address: string;
   city: string;
   state: string;
