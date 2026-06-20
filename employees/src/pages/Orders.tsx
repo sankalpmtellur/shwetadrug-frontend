@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { ClipboardCheck, PackageSearch, RefreshCcw, Store } from "lucide-react";
+import { ClipboardCheck, Download, PackageSearch, RefreshCcw, Store } from "lucide-react";
 import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
@@ -42,6 +42,7 @@ export default function Orders() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<EmployeeOrder | null>(null);
   const [detailsLoadingId, setDetailsLoadingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
@@ -107,6 +108,27 @@ export default function Orders() {
       setMessage({ tone: "error", text: getApiErrorMessage(detailsError) });
     } finally {
       setDetailsLoadingId(null);
+    }
+  }
+
+  async function downloadInvoice(order: EmployeeOrder) {
+    setDownloadingInvoiceId(order.id);
+
+    try {
+      const blob = await orderService.downloadInvoicePdf(order.id);
+      const fileUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = `${order.orderNo}-invoice.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(fileUrl);
+      setMessage({ tone: "success", text: `Invoice downloaded for ${order.orderNo}.` });
+    } catch (downloadError) {
+      setMessage({ tone: "error", text: getApiErrorMessage(downloadError) });
+    } finally {
+      setDownloadingInvoiceId(null);
     }
   }
 
@@ -186,6 +208,15 @@ export default function Orders() {
                           variant="secondary"
                         >
                           {selectedOrder?.id === order.id ? "Hide" : detailsLoadingId === order.id ? "Loading..." : "Details"}
+                        </Button>
+                        <Button
+                          className="h-9 gap-2 px-3"
+                          disabled={downloadingInvoiceId === order.id}
+                          onClick={() => void downloadInvoice(order)}
+                          variant="secondary"
+                        >
+                          <Download className="h-4 w-4" />
+                          {downloadingInvoiceId === order.id ? "Downloading..." : "Download Invoice"}
                         </Button>
                         {action ? (
                           <Button

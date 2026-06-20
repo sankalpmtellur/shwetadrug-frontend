@@ -1,29 +1,21 @@
 import { useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
 import { AuthLayout } from "../layouts/AuthLayout";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { authService } from "../services/authService";
 
 const initialForm = {
-  shopName: "",
-  email: "",
-  gstNumber: "",
-  drugLicenseNumber: "",
-  phone: "",
   ownerName: "",
-  password: "",
+  shopName: "",
+  phone: "",
+  email: "",
   address: "",
-  city: "",
-  state: "",
-  pincode: "",
 };
 
 export default function Signup() {
   const [form, setForm] = useState(initialForm);
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -37,7 +29,7 @@ export default function Signup() {
 
     try {
       await authService.retailerSignup(form);
-      toast.success("Signup submitted. Admin approval is required before login.");
+      toast.success("Signup submitted successfully. Admin approval is required before login.");
       navigate("/login", { replace: true });
     } catch {
       toast.error("Could not create account");
@@ -47,60 +39,31 @@ export default function Signup() {
   }
 
   return (
-    <AuthLayout title="Create retailer account" subtitle="Add your pharmacy details to create your retailer login.">
-      <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
+    <AuthLayout title="Create retailer account" subtitle="Submit your pharmacy details for admin approval.">
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <label className="block text-sm font-semibold text-navy">
+          Owner Name
+          <Input className="mt-2" value={form.ownerName} onChange={(event) => updateField("ownerName", event.target.value)} placeholder="Owner full name" required />
+        </label>
         <label className="block text-sm font-semibold text-navy">
           Pharmacy Name
           <Input className="mt-2" value={form.shopName} onChange={(event) => updateField("shopName", event.target.value)} placeholder="Your pharmacy name" required />
+        </label>
+        <label className="block text-sm font-semibold text-navy">
+          Phone Number
+          <Input className="mt-2" value={form.phone} onChange={(event) => updateField("phone", event.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10 digit mobile number" required />
         </label>
         <label className="block text-sm font-semibold text-navy">
           Email ID
           <Input className="mt-2" type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} placeholder="owner@example.com" required />
         </label>
         <label className="block text-sm font-semibold text-navy">
-          GST Number <span className="font-medium text-muted">(optional)</span>
-          <Input className="mt-2" value={form.gstNumber} onChange={(event) => updateField("gstNumber", event.target.value)} placeholder="GST registration number" />
-        </label>
-        <label className="block text-sm font-semibold text-navy">
-          Mobile
-          <Input className="mt-2" value={form.phone} onChange={(event) => updateField("phone", event.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10 digit mobile number" required />
-        </label>
-        <label className="block text-sm font-semibold text-navy">
-          Owner Name
-          <Input className="mt-2" value={form.ownerName} onChange={(event) => updateField("ownerName", event.target.value)} placeholder="Owner full name" required />
-        </label>
-        <label className="block text-sm font-semibold text-navy">
-          Drug License Number <span className="font-medium text-muted">(optional)</span>
-          <Input className="mt-2" value={form.drugLicenseNumber} onChange={(event) => updateField("drugLicenseNumber", event.target.value)} placeholder="Drug license number" />
-        </label>
-        <label className="block text-sm font-semibold text-navy">
-          Password
-          <div className="relative mt-2">
-            <Input className="pr-11" type={showPassword ? "text" : "password"} value={form.password} onChange={(event) => updateField("password", event.target.value)} placeholder="Create a strong password" required />
-            <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition hover:text-primary" aria-label={showPassword ? "Hide password" : "Show password"}>
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-            </button>
-          </div>
-        </label>
-        <label className="block text-sm font-semibold text-navy sm:col-span-2">
           Address
           <Input className="mt-2" value={form.address} onChange={(event) => updateField("address", event.target.value)} placeholder="Shop number, building, street" required />
         </label>
-        <label className="block text-sm font-semibold text-navy">
-          City
-          <Input className="mt-2" value={form.city} onChange={(event) => updateField("city", event.target.value)} placeholder="City" required />
-        </label>
-        <label className="block text-sm font-semibold text-navy">
-          State
-          <Input className="mt-2" value={form.state} onChange={(event) => updateField("state", event.target.value)} placeholder="State" required />
-        </label>
-        <label className="block text-sm font-semibold text-navy sm:col-span-2">
-          Pincode
-          <Input className="mt-2" value={form.pincode} onChange={(event) => updateField("pincode", event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="Postal pincode" required />
-        </label>
 
-        <Button type="submit" className="w-full sm:col-span-2" disabled={isLoading}>
-          {isLoading ? "Creating account..." : "Create Account"}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Submitting request..." : "Submit Signup Request"}
         </Button>
       </form>
 
