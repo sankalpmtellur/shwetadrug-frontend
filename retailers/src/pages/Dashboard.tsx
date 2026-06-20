@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { AlertCircle, Info, Minus, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { AlertCircle, Info, PackageCheck, Search, ShoppingBag, ShoppingCart } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
 import { DashboardLayout } from "../layouts/DashboardLayout";
@@ -26,8 +26,11 @@ function usePageSize() {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
+  const [quantityErrors, setQuantityErrors] = useState<Record<string, string>>({});
+  const [activeQuantityAction, setActiveQuantityAction] = useState<Record<string, "cart" | "buy" | undefined>>({});
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +40,7 @@ export default function Dashboard() {
   const pageKey = `${search}:${pageSize}`;
   const [paging, setPaging] = useState({ key: pageKey, count: pageSize });
   const visibleCount = paging.key === pageKey ? paging.count : pageSize;
-  const { addItem, items, removeItem } = useCart();
+  const { addItem, items } = useCart();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -78,20 +81,48 @@ export default function Dashboard() {
   const visibleMedicines = useMemo(() => medicines.slice(0, visibleCount), [medicines, visibleCount]);
   const canLoadMore = visibleCount < medicines.length;
 
-  const quantityFor = (id: string, isOut: boolean) => {
-    if (isOut) return 0;
-    return quantities[id] ?? 1;
+  const openQuantityBox = (medicineId: string, action: "cart" | "buy") => {
+    setActiveQuantityAction((current) => ({ ...current, [medicineId]: action }));
+    setQuantityDrafts((current) => ({ ...current, [medicineId]: "" }));
+    setQuantityErrors((current) => ({ ...current, [medicineId]: "" }));
   };
 
-  const updateQty = (id: string, value: number) => {
-    setQuantities((current) => ({ ...current, [id]: Math.max(0, Math.floor(value) || 0) }));
+  const closeQuantityBox = (medicineId: string) => {
+    setActiveQuantityAction((current) => ({ ...current, [medicineId]: undefined }));
+    setQuantityDrafts((current) => ({ ...current, [medicineId]: "" }));
+    setQuantityErrors((current) => ({ ...current, [medicineId]: "" }));
+  };
+
+  const updateQuantityDraft = (medicineId: string, value: string) => {
+    setQuantityDrafts((current) => ({ ...current, [medicineId]: value.replace(/[^\d]/g, "") }));
+    setQuantityErrors((current) => ({ ...current, [medicineId]: "" }));
+  };
+
+  const confirmQuantity = async (medicine: Medicine) => {
+    const action = activeQuantityAction[medicine.id];
+    const qty = Number(quantityDrafts[medicine.id]);
+
+    if (!action) return;
+
+    if (!Number.isInteger(qty) || qty <= 0) {
+      setQuantityErrors((current) => ({ ...current, [medicine.id]: "Enter a valid quantity." }));
+      return;
+    }
+
+    await addItem(medicine, qty);
+    closeQuantityBox(medicine.id);
+
+    if (action === "buy") {
+      navigate("/checkout");
+    }
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="sticky top-0 z-30 -mx-3 border-b border-border bg-background px-3 pb-4 pt-3 shadow-[0_14px_28px_rgba(11,28,48,0.08)] md:-mx-8 md:px-8">
-          <div className="mx-auto max-w-4xl">
+        <div className="sticky top-0 z-50 isolate -mx-3 overflow-hidden border-b border-border bg-background px-3 pb-4 pt-3 shadow-[0_16px_30px_rgba(11,28,48,0.12)] md:-mx-8 md:px-8">
+          <div className="absolute inset-0 -z-10 bg-background" />
+          <div className="mx-auto max-w-4xl rounded-lg bg-background">
             <label className="relative block">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
               <input
@@ -123,18 +154,20 @@ export default function Dashboard() {
         ) : null}
 
         {!isLoading && !errorMessage ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="relative z-0 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visibleMedicines.map((medicine) => {
               const isOut = medicine.status === "Out";
-              const qty = quantityFor(medicine.id, isOut);
               const cartItem = items.find((item) => item.medicineId === medicine.id);
               const isInCart = Boolean(cartItem);
               const cartQty = cartItem?.qty ?? 0;
+              const activeAction = activeQuantityAction[medicine.id];
+              const quantityDraft = quantityDrafts[medicine.id] ?? "";
+              const quantityError = quantityErrors[medicine.id];
 
               return (
                 <article
                   key={medicine.id}
-                  className="flex min-h-[280px] flex-col rounded-lg border border-border bg-white p-4 shadow-sm transition hover:border-primary/30"
+                  className="relative z-0 flex min-h-[280px] flex-col rounded-lg border border-border bg-white p-4 shadow-sm transition hover:border-primary/30"
                 >
                   <div className="flex items-start gap-3">
                     <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedMedicine(medicine)}>
@@ -161,82 +194,71 @@ export default function Dashboard() {
                       <span className="text-xs font-black uppercase tracking-widest text-muted">Order Qty</span>
                       {isInCart ? <span className="text-xs font-black text-primary">In cart: {cartQty}</span> : null}
                     </div>
-                    <div className={`mt-3 flex h-11 overflow-hidden rounded-lg border border-border bg-white ${isOut ? "opacity-50" : ""}`}>
-                      <button
-                        type="button"
-                        disabled={isOut}
-                        onClick={() => updateQty(medicine.id, qty - 1)}
-                        className="grid w-11 place-items-center text-muted disabled:cursor-not-allowed"
-                        aria-label={`Decrease ${medicine.name} quantity`}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        inputMode="numeric"
-                        disabled={isOut}
-                        value={qty}
-                        onChange={(event) => updateQty(medicine.id, Number(event.target.value))}
-                        className="min-w-0 flex-1 border-x border-border text-center text-sm font-black text-navy outline-none disabled:cursor-not-allowed"
-                        aria-label={`${medicine.name} quantity`}
-                      />
-                      <button
-                        type="button"
-                        disabled={isOut}
-                        onClick={() => updateQty(medicine.id, qty + 1)}
-                        className="grid w-11 place-items-center text-primary disabled:cursor-not-allowed disabled:text-muted"
-                        aria-label={`Increase ${medicine.name} quantity`}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="mt-2 grid grid-cols-4 gap-2">
-                      {[1, 5, 10, 25].map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          disabled={isOut}
-                          onClick={() => updateQty(medicine.id, preset)}
-                          className={`h-8 rounded-md border text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                            qty === preset
-                              ? "border-primary bg-primary text-white"
-                              : "border-border bg-white text-muted hover:border-primary hover:text-primary"
-                          }`}
-                        >
-                          {preset}
-                        </button>
-                      ))}
-                    </div>
+                    {activeAction ? (
+                      <div className="mt-3 space-y-2">
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          inputMode="numeric"
+                          autoFocus
+                          value={quantityDraft}
+                          onChange={(event) => updateQuantityDraft(medicine.id, event.target.value)}
+                          placeholder="Enter quantity"
+                          className="h-11 w-full rounded-lg border border-border bg-white px-3 text-center text-sm font-black text-navy outline-none placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10"
+                          aria-label={`Enter quantity for ${medicine.name}`}
+                        />
+                        {quantityError ? <p className="text-xs font-bold text-error">{quantityError}</p> : null}
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => closeQuantityBox(medicine.id)}
+                            className="h-10 rounded-lg bg-white px-3 text-sm font-black text-muted transition hover:bg-surface-strong"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void confirmQuantity(medicine)}
+                            className="h-10 rounded-lg bg-primary px-3 text-sm font-black text-white transition hover:bg-primary/90"
+                          >
+                            {activeAction === "buy" ? "Continue" : "Confirm"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm font-semibold leading-5 text-muted">
+                        Choose an action, then enter the exact quantity you need.
+                      </p>
+                    )}
                   </div>
 
                   <div className="mt-auto pt-4">
-                    <Button
-                      disabled={isOut || qty <= 0}
-                      variant={isOut ? "ghost" : "primary"}
-                      className="h-11 w-full rounded-lg px-3 text-sm"
-                      onClick={() => addItem(medicine, qty)}
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                      {isOut ? "Out of Stock" : isInCart ? "Update Cart" : "Add to Cart"}
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        disabled={isOut}
+                        variant={isOut ? "ghost" : "secondary"}
+                        className="h-11 rounded-lg px-3 text-sm"
+                        onClick={() => openQuantityBox(medicine.id, "cart")}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        {isInCart ? "Add More" : "Add to Cart"}
+                      </Button>
+                      <Button
+                        disabled={isOut}
+                        variant={isOut ? "ghost" : "primary"}
+                        className="h-11 rounded-lg px-3 text-sm"
+                        onClick={() => openQuantityBox(medicine.id, "buy")}
+                      >
+                        <ShoppingBag className="h-4 w-4" />
+                        Buy
+                      </Button>
+                    </div>
 
-                    {isInCart ? (
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        <Link to="/checkout" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-surface-strong px-3 text-sm font-black text-primary">
-                          <ShoppingBag className="h-4 w-4" />
-                          Buy
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => removeItem(medicine.id)}
-                          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-50 px-3 text-sm font-black text-error"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Remove
-                        </button>
-                      </div>
+                    {isOut ? (
+                      <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-center text-xs font-black text-error">
+                        Out of Stock
+                      </p>
                     ) : null}
                   </div>
                 </article>

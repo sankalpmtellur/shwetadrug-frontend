@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, ClipboardList, PackageCheck, ShieldCheck, Truck } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowRight } from "lucide-react";
 import heroImage from "../assets/home-hero.png";
 
 function Home() {
   return (
     <main className="min-h-screen bg-background text-navy">
-      <section className="relative isolate flex min-h-[88svh] overflow-hidden">
+      <section className="relative isolate flex min-h-screen overflow-hidden">
         <img
           src={heroImage}
           alt=""
@@ -16,7 +15,7 @@ function Home() {
 
         <div className="relative mx-auto flex w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
           <nav className="flex items-center justify-between gap-4">
-            <span className="text-base font-black text-primary">Shweta Drug</span>
+            <span className="text-sm font-black uppercase tracking-widest text-primary">Retailer Portal</span>
             <div className="flex items-center gap-2">
               <Link
                 to="/login"
@@ -34,13 +33,16 @@ function Home() {
           </nav>
 
           <div className="flex flex-1 items-center py-12 sm:py-16">
-            <div className="max-w-2xl">
-              <p className="text-xs font-black uppercase tracking-widest text-primary">Wholesale ordering portal</p>
+            <div className="max-w-2xl rounded-none">
+              <p className="text-xs font-black uppercase tracking-widest text-primary">Wholesale medicine ordering</p>
               <h1 className="mt-4 text-4xl font-black leading-tight text-navy sm:text-5xl lg:text-6xl">
                 Shweta Drug Distributors
               </h1>
               <p className="mt-5 text-base font-semibold leading-7 text-muted sm:text-lg">
-                Search stock, place medicine orders, track bills, and download invoices from one simple retailer portal.
+                A clean ordering portal for retailers to search medicines, create exact-quantity orders, and manage bills without repeated calls or manual lists.
+              </p>
+              <p className="mt-4 max-w-xl text-sm font-semibold leading-6 text-muted">
+                Built for daily pharmacy purchasing: quick login, direct ordering, and a smoother path from selection to checkout.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -62,30 +64,7 @@ function Home() {
           </div>
         </div>
       </section>
-
-      <section className="border-y border-border bg-white">
-        <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-          <HomePoint icon={<PackageCheck className="h-5 w-5" />} title="Live Stock" text="View available medicines and pack details." />
-          <HomePoint icon={<ClipboardList className="h-5 w-5" />} title="Easy Orders" text="Choose exact quantities without fixed bundles." />
-          <HomePoint icon={<Truck className="h-5 w-5" />} title="Order Tracking" text="Follow every order from processing to delivery." />
-          <HomePoint icon={<ShieldCheck className="h-5 w-5" />} title="PDF Invoices" text="Download and share bills whenever needed." />
-        </div>
-      </section>
     </main>
-  );
-}
-
-function HomePoint({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-soft text-primary">
-        {icon}
-      </div>
-      <div>
-        <h2 className="text-sm font-black text-navy">{title}</h2>
-        <p className="mt-1 text-sm font-semibold leading-5 text-muted">{text}</p>
-      </div>
-    </div>
   );
 }
 
