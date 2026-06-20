@@ -23,6 +23,12 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
+  });
   const [errorMessage, setErrorMessage] = useState("");
 
   async function loadProfile() {
@@ -108,6 +114,39 @@ export default function Profile() {
       toast.error("Could not update profile");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function changePassword() {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmNewPassword) {
+      toast.error("Please enter all password fields.");
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters.");
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
+      toast.error("New password and confirm password must match.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      await profileService.changePassword(passwordForm);
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+      });
+      toast.success("Password changed successfully");
+    } catch {
+      toast.error("Could not change password. Check your current password.");
+    } finally {
+      setIsChangingPassword(false);
     }
   }
 
@@ -229,6 +268,44 @@ export default function Profile() {
                 </div>
               </Card>
             </div>
+
+            <Card className="p-5">
+              <h2 className="text-xl font-black text-navy">Change Password</h2>
+              <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                <label className="block text-sm font-semibold text-navy">
+                  Current Password
+                  <Input
+                    className="mt-2"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))}
+                  />
+                </label>
+                <label className="block text-sm font-semibold text-navy">
+                  New Password
+                  <Input
+                    className="mt-2"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(event) => setPasswordForm((current) => ({ ...current, newPassword: event.target.value }))}
+                  />
+                </label>
+                <label className="block text-sm font-semibold text-navy">
+                  Confirm New Password
+                  <Input
+                    className="mt-2"
+                    type="password"
+                    value={passwordForm.confirmNewPassword}
+                    onChange={(event) => setPasswordForm((current) => ({ ...current, confirmNewPassword: event.target.value }))}
+                  />
+                </label>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button type="button" onClick={changePassword} disabled={isChangingPassword}>
+                  {isChangingPassword ? "Changing..." : "Change Password"}
+                </Button>
+              </div>
+            </Card>
           </>
         ) : null}
       </div>

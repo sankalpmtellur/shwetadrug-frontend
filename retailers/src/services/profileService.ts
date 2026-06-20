@@ -25,4 +25,9 @@ export const profileService = {
     const response = await api.patch<ApiResponse<DefaultAddress>>("/users/profile/address", payload);
     return response.data.data;
   },
+
+  async changePassword(payload: { currentPassword: string; newPassword: string; confirmNewPassword: string }) {
+    const response = await api.patch<ApiResponse<{ id: string; email: string }>>("/users/profile/password", payload);
+    return response.data.data;
+  },
 };
