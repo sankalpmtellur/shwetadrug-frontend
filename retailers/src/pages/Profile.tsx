@@ -196,7 +196,6 @@ export default function Profile() {
                     <h1 className="mt-1 truncate text-2xl font-black text-navy sm:text-3xl">
                       {profile.retailer?.pharmacyName ?? profile.name}
                     </h1>
-                    <p className="text-sm font-semibold text-muted">Retailer Code: {profile.retailer?.code ?? "Not available"}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
