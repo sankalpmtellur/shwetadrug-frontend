@@ -105,21 +105,6 @@ export default function Dashboard() {
           <PreviewMessage message="Inventory preview records are not included in the employee dashboard API yet. Open Inventory for the full list after inventory integration." />
         </Card>
       </div>
-
-      <Card>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <Truck className="mt-1 h-5 w-5 text-primary" />
-            <div>
-              <h2 className="text-lg font-bold text-navy">Inventory and Expiry Management</h2>
-              <p className="text-sm text-muted">Use the sidebar to add stock, update existing batches, and check expiry dates professionally.</p>
-            </div>
-          </div>
-          <Link className="inline-flex h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-bold text-navy transition hover:bg-surface-soft" to="/expiry">
-            Open expiry
-          </Link>
-        </div>
-      </Card>
     </>
   );
 }
