@@ -120,27 +120,23 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="sticky top-0 z-30 -mx-3 border-b border-border bg-background/98 px-3 pb-4 pt-3 backdrop-blur md:-mx-8 md:px-8 md:pt-0">
+        {/* This sits perfectly flush at top-0 and seals cards dynamically behind it with solid bg-background */}
+        <div className="sticky top-0 z-30 -mx-3 bg-background px-3 pb-4 pt-3 border-b border-slate-200/80 md:-mx-8 md:px-8 md:pt-6">
           <div className="mx-auto max-w-6xl">
-            <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-widest text-primary">Inventory</p>
-                <h1 className="text-2xl font-black text-navy">Search medicines</h1>
-              </div>
-              <p className="text-sm font-semibold text-muted">{medicines.length} products found</p>
-            </div>
-            <div className="rounded-lg border border-border bg-white p-2 shadow-sm">
+            {/* Search Box Wrapper */}
+            <div className="rounded-xl border border-slate-200/80 bg-white p-2 shadow-sm transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:shadow-md">
               <label className="relative block">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-blue-500" />
                 <input
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search medicine name, SKU, or generic name"
-                  className="h-12 w-full rounded-lg border border-transparent bg-surface-soft py-3 pl-12 pr-4 text-base font-semibold text-navy outline-none placeholder:text-muted focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
+                  className="h-12 w-full rounded-lg border-transparent bg-slate-50 py-3 pl-12 pr-4 text-base font-semibold text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:bg-white"
                 />
               </label>
             </div>
+
           </div>
         </div>
 

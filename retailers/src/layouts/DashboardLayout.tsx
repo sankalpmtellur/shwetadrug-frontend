@@ -18,7 +18,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       <div className="mx-auto grid h-screen max-w-[1440px] grid-cols-1 pt-[68px] sm:pb-16">
-        <main className="min-w-0 overflow-y-auto p-3 md:p-8">
+        <main className="min-w-0 overflow-y-auto pb-3 px-3 md:pb-8 md:px-8">
           {children}
         </main>
       </div>
