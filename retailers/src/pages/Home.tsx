@@ -1,97 +1,92 @@
 import { Link } from "react-router-dom";
-import type { ReactNode } from "react";
-import { ArrowRight, CheckCircle2, ClipboardList, Search, Truck } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import heroImage from "../assets/home-hero.png";
 
 function Home() {
   return (
-    <main className="min-h-screen bg-background text-navy">
-      <section className="relative isolate flex min-h-screen overflow-hidden">
-        <img
-          src={heroImage}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-[62%_center] sm:object-center"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(248,249,255,.98)_0%,rgba(248,249,255,.92)_48%,rgba(248,249,255,.76)_100%)] md:bg-[linear-gradient(90deg,rgba(248,249,255,.99)_0%,rgba(248,249,255,.94)_43%,rgba(248,249,255,.60)_72%,rgba(248,249,255,.20)_100%)]" />
+    <main className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-blue-500/10 selection:text-blue-600">
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 h-16 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold uppercase tracking-wider text-slate-800">
+              Retailer Portal
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/login"
+              className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+            >
+              Login
+            </Link>
+            <Link
+              to="/signup"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm shadow-blue-600/10 hover:bg-blue-700 active:scale-[0.98] transition-all"
+            >
+              Sign Up
+            </Link>
+          </div>
+        </div>
+      </header>
 
-        <div className="relative mx-auto flex w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
-          <nav className="flex items-center justify-between gap-4 rounded-lg border border-white/70 bg-white/70 px-3 py-2 shadow-sm backdrop-blur">
-            <span className="min-w-0 text-sm font-black uppercase tracking-widest text-primary">Retailer Portal</span>
-            <div className="flex items-center gap-2">
-              <Link
-                to="/login"
-                className="inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-black text-primary transition hover:bg-white/70"
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-black text-white shadow-soft transition hover:bg-primary/90"
-              >
-                Sign Up
-              </Link>
-            </div>
-          </nav>
+      <section className="relative overflow-hidden bg-white py-12 sm:py-20 lg:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
 
-          <div className="grid flex-1 items-center gap-8 py-10 sm:py-14 md:grid-cols-[minmax(0,1fr)_minmax(260px,.7fr)] lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,.95fr)]">
-            <div className="max-w-2xl rounded-none">
-              <p className="text-xs font-black uppercase tracking-widest text-primary">Wholesale medicine ordering</p>
-              <h1 className="mt-4 text-4xl font-black leading-tight text-navy sm:text-5xl lg:text-6xl">
+            <div className="flex flex-col lg:col-span-6 z-10 text-center sm:text-left items-center sm:items-start">
+              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl leading-[1.1] text-center sm:text-left">
                 Shweta Drug Distributors
               </h1>
-              <p className="mt-5 max-w-xl text-base font-semibold leading-7 text-muted sm:text-lg">
-                A clean ordering portal for retailers to search medicines, create exact-quantity orders, and manage bills without repeated calls or manual lists.
-              </p>
-              <p className="mt-4 max-w-xl text-sm font-semibold leading-6 text-muted">
-                Built for daily pharmacy purchasing: quick login, direct ordering, and a smoother path from selection to checkout.
+
+              <p className="mt-6 text-base sm:text-lg leading-relaxed text-slate-600 font-medium max-w-xl text-center sm:text-left">
+                Streamline your daily wholesale medicine purchasing. Log in to check live stock, build exact orders without communication errors, and download invoice-ready history anytime.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3 w-full sm:w-auto sm:flex-row sm:items-center">
                 <Link
                   to="/login"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-6 text-sm font-black text-white shadow-soft transition hover:bg-primary/90"
+                  className="group inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-[0.98] transition-all w-full sm:w-auto"
                 >
                   Start Ordering
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link
                   to="/signup"
-                  className="inline-flex h-12 items-center justify-center rounded-lg border border-border bg-white/90 px-6 text-sm font-black text-primary shadow-sm transition hover:bg-white"
+                  className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] transition-all w-full sm:w-auto"
                 >
                   Create Retailer Account
                 </Link>
               </div>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                <HomeStep icon={<Search className="h-4 w-4" />} label="Search stock" />
-                <HomeStep icon={<ClipboardList className="h-4 w-4" />} label="Place orders" />
-                <HomeStep icon={<Truck className="h-4 w-4" />} label="Track delivery" />
-              </div>
             </div>
-            <div className="hidden min-h-[420px] md:flex md:items-end md:justify-end" aria-hidden="true">
-              <div className="mb-8 w-full max-w-xs rounded-lg border border-white/70 bg-white/85 p-4 shadow-soft backdrop-blur">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-sm font-black text-navy">Built for repeat ordering</p>
-                    <p className="mt-1 text-sm font-semibold leading-5 text-muted">Fast medicine search, cart review, and invoice-ready order history.</p>
+
+            <div className="lg:col-span-6 flex flex-col items-center lg:items-end justify-center w-full">
+              <div className="relative w-full max-w-md lg:max-w-none rounded-2xl border border-slate-200/80 bg-slate-50 p-2 shadow-xl shadow-slate-100 overflow-hidden">
+                <img
+                  src={heroImage}
+                  alt="Shweta Drug Distributors Portal Preview"
+                  className="h-48 sm:h-72 lg:h-auto lg:aspect-[1.2] w-full rounded-xl object-cover object-center"
+                />
+
+                <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:bottom-6 sm:right-auto sm:max-w-xs rounded-xl border border-white/80 bg-white/95 p-4 sm:p-5 shadow-xl backdrop-blur-md ring-1 ring-black/5 transition-all duration-300">
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-bold text-slate-900 text-sm">Built for repeat ordering</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-500 font-medium">
+                        Fast medicine search, cart review, and invoice-ready order history.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
     </main>
-  );
-}
-
-function HomeStep({ icon, label }: { icon: ReactNode; label: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-white/70 bg-white/80 px-3 py-3 text-sm font-black text-navy shadow-sm backdrop-blur">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-strong text-primary">{icon}</span>
-      {label}
-    </div>
   );
 }
 
