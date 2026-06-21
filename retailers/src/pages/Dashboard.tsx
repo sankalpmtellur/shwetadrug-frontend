@@ -120,9 +120,9 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="sticky top-0 z-30 -mx-3 bg-background px-3 pb-4 pt-3 border-b border-slate-200/80 md:-mx-8 md:px-8 md:pt-6">
+        <div className="sticky top-0 z-30 -mx-3 bg-background px-3 pb-4 pt-3 border-b border-slate-300/80 md:-mx-8 md:px-8 md:pt-6">
           <div className="mx-auto max-w-6xl">
-            <div className="rounded-xl border border-slate-200/80 bg-white p-2 shadow-sm transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:shadow-md">
+            <div className="rounded-xl border border-slate-300/80 bg-white p-2 shadow-sm transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:shadow-md">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-blue-500" />
                 <input
