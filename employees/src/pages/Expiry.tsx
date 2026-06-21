@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, RefreshCcw, ShieldAlert, TriangleAlert } from "lucide-react";
+import { useEffect, useState } from "react";
+import { RefreshCcw } from "lucide-react";
 import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
-import { Metric } from "../components/common/Metric";
 import { Cell, Table } from "../components/common/Table";
 import { getApiErrorMessage, inventoryService, type InventoryLot } from "../services/inventoryService";
 
@@ -13,15 +12,6 @@ export default function Expiry() {
   const [alerts, setAlerts] = useState<InventoryLot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const metrics = useMemo(
-    () => ({
-      total: alerts.length,
-      critical: alerts.filter((item) => getDaysRemaining(item.expiryDate) <= 7).length,
-      affectedStock: alerts.reduce((sum, item) => sum + item.availableQuantity, 0),
-    }),
-    [alerts],
-  );
 
   async function loadAlerts() {
     setIsLoading(true);
@@ -46,12 +36,6 @@ export default function Expiry() {
       <div>
         <h1 className="text-2xl font-black text-navy md:text-3xl">Expiry Management</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted">Review near-expiry batches before they are sent to retailers and decide the next stock action.</p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Metric icon={<ShieldAlert />} label="Expiry Alerts" value={String(metrics.total)} tone="text-warning" hint={`Next ${expiryWindowDays} days`} />
-        <Metric icon={<TriangleAlert />} label="Critical Batches" value={String(metrics.critical)} tone="text-error" hint="7 days or less" />
-        <Metric icon={<CalendarClock />} label="Affected Stock" value={String(metrics.affectedStock)} tone="text-primary" hint="Units to review" />
       </div>
 
       <Card>
