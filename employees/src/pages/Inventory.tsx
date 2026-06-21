@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { Boxes, PackagePlus, RefreshCcw } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { PackagePlus, RefreshCcw } from "lucide-react";
 import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
-import { Metric } from "../components/common/Metric";
 import { Cell, Table } from "../components/common/Table";
 import { getApiErrorMessage, inventoryService, type InventoryLot, type InventoryStatus } from "../services/inventoryService";
 
@@ -39,15 +38,7 @@ export default function Inventory() {
   const [error, setError] = useState("");
 
   const selectedItem = items.find((item) => item.id === selectedItemId) ?? null;
-
-  const totals = useMemo(
-    () => ({
-      stock: items.reduce((sum, item) => sum + item.availableQuantity, 0),
-      low: items.filter((item) => item.status !== "HEALTHY").length,
-      batches: items.length,
-    }),
-    [items],
-  );
+  const medicineOptions = useMemo(() => Array.from(new Map(items.map((item) => [item.medicine.id, item.medicine])).values()), [items]);
 
   async function loadInventory() {
     setIsLoading(true);
@@ -64,7 +55,23 @@ export default function Inventory() {
   }
 
   useEffect(() => {
-    void loadInventory();
+    let isMounted = true;
+
+    inventoryService
+      .getInventory()
+      .then((data) => {
+        if (isMounted) setItems(data);
+      })
+      .catch((loadError) => {
+        if (isMounted) setError(getApiErrorMessage(loadError));
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   function selectItem(item: InventoryLot) {
@@ -82,7 +89,7 @@ export default function Inventory() {
     setMessage(null);
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!selectedItem) {
@@ -129,18 +136,12 @@ export default function Inventory() {
     <section className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-navy md:text-3xl">Inventory Management</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted">Update existing inventory lots after stock movement or pricing changes.</p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Metric icon={<Boxes />} label="Available Units" value={totals.stock.toLocaleString("en-IN")} tone="text-primary" hint={`${totals.batches} tracked batches`} />
-        <Metric icon={<PackagePlus />} label="Batch Records" value={String(totals.batches)} tone="text-success" hint="Backend inventory lots" />
-        <Metric icon={<RefreshCcw />} label="Reorder Alerts" value={String(totals.low)} tone="text-warning" hint="Low or empty stock" />
+        <p className="mt-2 max-w-2xl text-sm text-muted">Update existing lots and review current stock records in one clean workflow.</p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[.85fr_1.15fr]">
         <Card>
-          <h2 className="text-lg font-bold text-navy">Edit Existing Stock</h2>
+          <h2 className="text-lg font-bold text-navy">Edit Existing Inventory</h2>
           <p className="mt-1 text-sm text-muted">Select an inventory lot from the table, then update quantity, selling price, or expiry date.</p>
           <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
             <Input label="Medicine name" value={selectedItem?.medicine.name ?? ""} placeholder="Select from table" readOnly />
@@ -164,7 +165,7 @@ export default function Inventory() {
           </form>
         </Card>
 
-        <Card>
+        <Card className="xl:row-span-2">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-bold text-navy">Current Inventory</h2>
@@ -207,6 +208,37 @@ export default function Inventory() {
             </Table>
           ) : null}
           {!isLoading && !error && items.length === 0 ? <p className="py-8 text-center text-sm text-muted">No inventory lots found.</p> : null}
+        </Card>
+
+        <Card>
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-surface-strong p-2 text-primary">
+              <PackagePlus className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-navy">Add Inventory</h2>
+              <p className="mt-1 text-sm text-muted">
+                New inventory lots require a medicine, supplier, batch number, quantity, price, and expiry date. The current employee API does not expose a create-inventory endpoint, so new lots should be added through the admin/procurement flow.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-4">
+            <Select label="Medicine" value="" disabled>
+              <option value="">{medicineOptions.length ? "Select medicine in admin flow" : "No medicines loaded"}</option>
+              {medicineOptions.map((medicine) => (
+                <option key={medicine.id} value={medicine.id}>
+                  {medicine.name} ({medicine.sku})
+                </option>
+              ))}
+            </Select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Batch number" value="" placeholder="Create endpoint not available" readOnly />
+              <Input label="Quantity" value="" placeholder="Create endpoint not available" readOnly />
+            </div>
+            <Button type="button" className="h-12 w-full" disabled>
+              Add inventory not available for employees
+            </Button>
+          </div>
         </Card>
       </div>
     </section>
@@ -257,6 +289,21 @@ function Input({
         readOnly={readOnly}
         className="h-11 w-full rounded-lg border border-border px-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 read-only:bg-surface-soft"
       />
+    </label>
+  );
+}
+
+function Select({ label, value, disabled, children }: { label: string; value: string; disabled?: boolean; children: ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-bold text-navy">{label}</span>
+      <select
+        value={value}
+        disabled={disabled}
+        className="h-11 w-full rounded-lg border border-border bg-surface-soft px-3 text-sm text-muted outline-none transition disabled:cursor-not-allowed disabled:opacity-80"
+      >
+        {children}
+      </select>
     </label>
   );
 }

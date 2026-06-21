@@ -40,7 +40,7 @@ export const inventoryService = {
     return response.data.data;
   },
 
-  async getExpiringInventory(days = 30) {
+  async getExpiringInventory(days = 60) {
     const response = await api.get<ApiResponse<InventoryLot[]>>("/inventory/alerts/expiring", {
       params: { days, limit: 100 },
     });

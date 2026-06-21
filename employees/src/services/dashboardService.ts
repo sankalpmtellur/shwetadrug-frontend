@@ -3,11 +3,8 @@ import type { ApiResponse } from "../types/auth";
 
 export type EmployeeDashboard = {
   pendingOrders: number;
-  packedShippedOrders: number;
   lowStockItems: number;
   expiringInventory: number;
-  pendingClaims: number;
-  activeDeliveries: number;
 };
 
 export const dashboardService = {

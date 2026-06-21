@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Boxes, ClipboardCheck, RefreshCcw, ShieldAlert, Truck } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Boxes, ClipboardCheck, RefreshCcw, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
@@ -25,7 +25,23 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    void loadDashboard();
+    let isMounted = true;
+
+    dashboardService
+      .getEmployeeDashboard()
+      .then((data) => {
+        if (isMounted) setDashboard(data);
+      })
+      .catch(() => {
+        if (isMounted) setError("Could not load dashboard data.");
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -33,9 +49,9 @@ export default function Dashboard() {
       <section className="rounded-lg border border-border bg-white p-5 shadow-sm md:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="mt-2 text-2xl font-black text-navy md:text-3xl">Dashboard</h1>
+            <h1 className="text-2xl font-black text-navy md:text-3xl">Employee Dashboard</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted">
-              A simple workspace for checking stock, seeing retailer orders, and reviewing expiry alerts.
+              A focused workspace for retailer orders, low stock items, and inventory nearing expiry.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -69,48 +85,13 @@ export default function Dashboard() {
 
       {dashboard ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <SummaryCard icon={<ClipboardCheck />} label="Pending Orders" value={String(dashboard.pendingOrders)} detail="Need employee review" />
-          <SummaryCard icon={<Truck />} label="Packed/Shipped" value={String(dashboard.packedShippedOrders)} detail="Ready or out for delivery" />
-          <SummaryCard icon={<Boxes />} label="Low Stock Items" value={String(dashboard.lowStockItems)} detail="Update stock soon" warning />
-          <SummaryCard icon={<ShieldAlert />} label="Expiring Inventory" value={String(dashboard.expiringInventory)} detail="Review before dispatch" warning />
-          <SummaryCard icon={<ShieldAlert />} label="Pending Claims" value={String(dashboard.pendingClaims)} detail="Claims need action" warning />
-          <SummaryCard icon={<Truck />} label="Active Deliveries" value={String(dashboard.activeDeliveries)} detail="Currently in delivery flow" />
+          <SummaryCard icon={<ClipboardCheck />} label="Orders" value={String(dashboard.pendingOrders)} detail="Incoming orders to review" />
+          <SummaryCard icon={<Boxes />} label="Low Stock Items" value={String(dashboard.lowStockItems)} detail="Update stock before dispatch" warning />
+          <SummaryCard icon={<ShieldAlert />} label="Expiring Inventory" value={String(dashboard.expiringInventory)} detail="Expiring in next 60 days" warning />
         </div>
       ) : null}
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Card>
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-navy">Who Ordered</h2>
-              <p className="text-sm text-muted">Latest retailer orders with received time and item count.</p>
-            </div>
-            <Link className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold text-white transition hover:bg-primary/90" to="/orders">
-              Open all
-            </Link>
-          </div>
-          <PreviewMessage message="Order preview records are not included in the employee dashboard API yet. Open Orders for the full list after order integration." />
-        </Card>
-
-        <Card>
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-navy">Check Stocks</h2>
-              <p className="text-sm text-muted">Low stock and reorder batches that need attention.</p>
-            </div>
-            <Link className="inline-flex h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-bold text-navy transition hover:bg-surface-soft" to="/inventory">
-              Manage stock
-            </Link>
-          </div>
-          <PreviewMessage message="Inventory preview records are not included in the employee dashboard API yet. Open Inventory for the full list after inventory integration." />
-        </Card>
-      </div>
     </>
   );
-}
-
-function PreviewMessage({ message }: { message: string }) {
-  return <div className="rounded-lg border border-dashed border-border bg-surface-soft p-4 text-sm font-semibold text-muted">{message}</div>;
 }
 
 function SummaryCard({
@@ -120,7 +101,7 @@ function SummaryCard({
   detail,
   warning = false,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   value: string;
   detail: string;

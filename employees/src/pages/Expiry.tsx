@@ -6,7 +6,7 @@ import { Card } from "../components/common/Card";
 import { Cell, Table } from "../components/common/Table";
 import { getApiErrorMessage, inventoryService, type InventoryLot } from "../services/inventoryService";
 
-const expiryWindowDays = 30;
+const expiryWindowDays = 60;
 
 export default function Expiry() {
   const [alerts, setAlerts] = useState<InventoryLot[]>([]);
@@ -28,21 +28,37 @@ export default function Expiry() {
   }
 
   useEffect(() => {
-    void loadAlerts();
+    let isMounted = true;
+
+    inventoryService
+      .getExpiringInventory(expiryWindowDays)
+      .then((data) => {
+        if (isMounted) setAlerts(data);
+      })
+      .catch((loadError) => {
+        if (isMounted) setError(getApiErrorMessage(loadError));
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
     <section className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-navy md:text-3xl">Expiry Management</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted">Review near-expiry batches before they are sent to retailers and decide the next stock action.</p>
+        <p className="mt-2 max-w-2xl text-sm text-muted">Expiring in next 60 days. Review affected batches before they are sent to retailers.</p>
       </div>
 
       <Card>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-navy">Expiry Review List</h2>
-            <p className="text-sm text-muted">Professional batch-wise view of medicines that need expiry control.</p>
+            <h2 className="text-lg font-bold text-navy">Expiring in next 60 days</h2>
+            <p className="text-sm text-muted">Batch-wise view of medicines that need expiry control before dispatch.</p>
           </div>
           <Button className="gap-2" onClick={() => void loadAlerts()} variant="secondary">
             <RefreshCcw className="h-4 w-4" />
@@ -59,10 +75,10 @@ export default function Expiry() {
         ) : null}
 
         {!isLoading && !error ? (
-          <Table headers={["Medicine", "SKU", "Batch", "Expiry", "Days", "Quantity", "Severity", "Required Action"]}>
+          <Table headers={["Medicine", "SKU", "Batch", "Expiry", "Days Left", "Quantity", "Priority", "Action"]}>
             {alerts.map((item) => {
               const daysRemaining = getDaysRemaining(item.expiryDate);
-              const severity = daysRemaining <= 7 ? "Critical" : "Warning";
+              const severity = daysRemaining <= 15 ? "Critical" : "Review";
 
               return (
                 <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
@@ -104,7 +120,7 @@ function formatDaysRemaining(days: number) {
 
 function getActionText(days: number) {
   if (days < 0) return "Do not dispatch; expired batch needs review.";
-  if (days <= 7) return "Hold dispatch and review batch urgently.";
+  if (days <= 15) return "Hold dispatch and review batch urgently.";
   return "Review before dispatch.";
 }
 

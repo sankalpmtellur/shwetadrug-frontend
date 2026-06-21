@@ -1,59 +1,16 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { ClipboardCheck, Download, PackageSearch, RefreshCcw, Store } from "lucide-react";
-import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Metric } from "../components/common/Metric";
 import { Cell, Table } from "../components/common/Table";
-import { getApiErrorMessage, orderService, type BackendOrderStatus, type EmployeeOrder } from "../services/orderService";
-
-const statusLabels: Record<BackendOrderStatus, string> = {
-  PENDING: "Pending",
-  VERIFIED: "Pending",
-  PICKING: "Pending",
-  PACKED: "Packed",
-  DISPATCHED: "Packed",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-  RETURNED: "Cancelled",
-};
-
-const statusTones: Record<BackendOrderStatus, "green" | "orange" | "blue" | "red"> = {
-  PENDING: "orange",
-  VERIFIED: "orange",
-  PICKING: "orange",
-  PACKED: "blue",
-  DISPATCHED: "blue",
-  DELIVERED: "green",
-  CANCELLED: "red",
-  RETURNED: "red",
-};
-
-function canMarkPacked(status: BackendOrderStatus) {
-  return status === "PENDING" || status === "VERIFIED" || status === "PICKING";
-}
-
-function canMarkDelivered(status: BackendOrderStatus) {
-  return status === "PACKED" || status === "DISPATCHED";
-}
-
-function canCancel(status: BackendOrderStatus) {
-  return status === "PENDING" || status === "VERIFIED";
-}
-
-function statusMessage(nextStatus: BackendOrderStatus) {
-  if (nextStatus === "PACKED") return "Packed";
-  if (nextStatus === "DELIVERED") return "Delivered";
-  if (nextStatus === "CANCELLED") return "Cancelled";
-  return statusLabels[nextStatus];
-}
+import { getApiErrorMessage, orderService, type EmployeeOrder } from "../services/orderService";
 
 export default function Orders() {
   const [query, setQuery] = useState("");
   const [orders, setOrders] = useState<EmployeeOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<EmployeeOrder | null>(null);
   const [detailsLoadingId, setDetailsLoadingId] = useState<string | null>(null);
@@ -74,7 +31,23 @@ export default function Orders() {
   }
 
   useEffect(() => {
-    void loadOrders();
+    let isMounted = true;
+
+    orderService
+      .getOrders()
+      .then((data) => {
+        if (isMounted) setOrders(data);
+      })
+      .catch((loadError) => {
+        if (isMounted) setError(getApiErrorMessage(loadError));
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const visibleOrders = useMemo(
@@ -89,21 +62,6 @@ export default function Orders() {
   );
 
   const totalItems = visibleOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
-
-  async function updateOrderStatus(order: EmployeeOrder, nextStatus: BackendOrderStatus) {
-    setUpdatingOrderId(order.id);
-
-    try {
-      await orderService.updateStatus(order.id, nextStatus);
-      setMessage({ tone: "success", text: `Order ${order.orderNo} updated to ${statusMessage(nextStatus)}.` });
-      setSelectedOrder(null);
-      await loadOrders();
-    } catch (updateError) {
-      setMessage({ tone: "error", text: getApiErrorMessage(updateError) });
-    } finally {
-      setUpdatingOrderId(null);
-    }
-  }
 
   async function showDetails(order: EmployeeOrder) {
     if (selectedOrder?.id === order.id) {
@@ -194,7 +152,7 @@ export default function Orders() {
         ) : null}
 
         {!isLoading && !error ? (
-          <Table headers={["Order", "Retailer", "Area", "Received", "Items", "Value", "Status", "Actions"]}>
+          <Table headers={["Order", "Retailer", "Area", "Received", "Items", "Value", "Actions"]}>
             {visibleOrders.map((order) => {
               const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -207,9 +165,6 @@ export default function Orders() {
                     <Cell>{formatDateTime(order.placedAt)}</Cell>
                     <Cell>{itemCount}</Cell>
                     <Cell>{formatCurrency(order.totalAmount)}</Cell>
-                    <Cell>
-                      <Badge tone={statusTones[order.status]}>{statusLabels[order.status]}</Badge>
-                    </Cell>
                     <Cell>
                       <div className="flex flex-wrap gap-2">
                         <Button
@@ -229,40 +184,12 @@ export default function Orders() {
                           <Download className="h-4 w-4" />
                           {downloadingInvoiceId === order.id ? "Downloading..." : "Download Invoice"}
                         </Button>
-                        {canMarkPacked(order.status) ? (
-                          <Button
-                            className="h-9 px-3"
-                            disabled={updatingOrderId === order.id}
-                            onClick={() => void updateOrderStatus(order, "PACKED")}
-                          >
-                            {updatingOrderId === order.id ? "Updating..." : "Mark Packed"}
-                          </Button>
-                        ) : null}
-                        {canMarkDelivered(order.status) ? (
-                          <Button
-                            className="h-9 px-3"
-                            disabled={updatingOrderId === order.id}
-                            onClick={() => void updateOrderStatus(order, "DELIVERED")}
-                          >
-                            {updatingOrderId === order.id ? "Updating..." : "Mark Delivered"}
-                          </Button>
-                        ) : null}
-                        {canCancel(order.status) ? (
-                          <Button
-                            className="h-9 px-3"
-                            disabled={updatingOrderId === order.id}
-                            onClick={() => void updateOrderStatus(order, "CANCELLED")}
-                            variant="secondary"
-                          >
-                            {updatingOrderId === order.id ? "Updating..." : "Cancel Order"}
-                          </Button>
-                        ) : null}
                       </div>
                     </Cell>
                   </tr>
                   {selectedOrder?.id === order.id ? (
                     <tr className="border-t border-border bg-surface-soft/60">
-                      <td colSpan={8} className="px-4 py-4">
+                      <td colSpan={7} className="px-4 py-4">
                         <OrderDetails order={selectedOrder} />
                       </td>
                     </tr>
