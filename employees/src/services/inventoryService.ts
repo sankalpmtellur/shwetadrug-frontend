@@ -32,6 +32,20 @@ export type InventoryUpdatePayload = {
   expiryDate?: string;
 };
 
+export type CreateMedicineInventoryPayload = {
+  medicineName: string;
+  manufacturerName: string;
+  categoryName: string;
+  packSize: string;
+  hsnCode?: string;
+  batchNumber: string;
+  expiryDate: string;
+  quantity: number;
+  mrp: number;
+  sellingPrice: number;
+  gstPercent: number;
+};
+
 export const inventoryService = {
   async getInventory() {
     const response = await api.get<ApiResponse<InventoryLot[]>>("/inventory", {
@@ -49,6 +63,11 @@ export const inventoryService = {
 
   async updateInventory(id: string, payload: InventoryUpdatePayload) {
     const response = await api.patch<ApiResponse<InventoryLot>>(`/inventory/${id}`, payload);
+    return response.data.data;
+  },
+
+  async createMedicineInventory(payload: CreateMedicineInventoryPayload) {
+    const response = await api.post<ApiResponse<InventoryLot>>("/inventory", payload);
     return response.data.data;
   },
 };

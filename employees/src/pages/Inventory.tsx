@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { PackagePlus, RefreshCcw } from "lucide-react";
 import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
@@ -10,6 +10,20 @@ const emptyForm = {
   quantity: "",
   sellingPrice: "",
   expiryDate: "",
+};
+
+const emptyAddForm = {
+  medicineName: "",
+  manufacturerName: "",
+  categoryName: "",
+  packSize: "",
+  hsnCode: "",
+  batchNumber: "",
+  expiryDate: "",
+  quantity: "",
+  mrp: "",
+  sellingPrice: "",
+  gstPercent: "12",
 };
 
 const statusLabels: Record<InventoryStatus, string> = {
@@ -32,13 +46,15 @@ export default function Inventory() {
   const [items, setItems] = useState<InventoryLot[]>([]);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [form, setForm] = useState(emptyForm);
+  const [addForm, setAddForm] = useState(emptyAddForm);
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [addMessage, setAddMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState("");
 
   const selectedItem = items.find((item) => item.id === selectedItemId) ?? null;
-  const medicineOptions = useMemo(() => Array.from(new Map(items.map((item) => [item.medicine.id, item.medicine])).values()), [items]);
 
   async function loadInventory() {
     setIsLoading(true);
@@ -89,6 +105,11 @@ export default function Inventory() {
     setMessage(null);
   }
 
+  function updateAddField(field: keyof typeof emptyAddForm, value: string) {
+    setAddForm((current) => ({ ...current, [field]: value }));
+    setAddMessage(null);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -129,6 +150,76 @@ export default function Inventory() {
       setMessage({ tone: "error", text: getApiErrorMessage(saveError) });
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleAddSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const quantity = Number(addForm.quantity);
+    const mrp = Number(addForm.mrp);
+    const sellingPrice = Number(addForm.sellingPrice);
+    const gstPercent = Number(addForm.gstPercent);
+
+    if (!addForm.medicineName.trim() || !addForm.manufacturerName.trim() || !addForm.categoryName.trim() || !addForm.packSize.trim()) {
+      setAddMessage({ tone: "error", text: "Please enter medicine name, manufacturer, category, and pack size." });
+      return;
+    }
+
+    if (!addForm.batchNumber.trim() || !addForm.expiryDate.trim()) {
+      setAddMessage({ tone: "error", text: "Please enter batch number and expiry date." });
+      return;
+    }
+
+    if (!addForm.quantity.trim() || Number.isNaN(quantity) || quantity <= 0 || !Number.isInteger(quantity)) {
+      setAddMessage({ tone: "error", text: "Please enter a valid positive whole number for quantity." });
+      return;
+    }
+
+    if (!addForm.mrp.trim() || Number.isNaN(mrp) || mrp <= 0) {
+      setAddMessage({ tone: "error", text: "Please enter a valid MRP." });
+      return;
+    }
+
+    if (!addForm.sellingPrice.trim() || Number.isNaN(sellingPrice) || sellingPrice <= 0) {
+      setAddMessage({ tone: "error", text: "Please enter a valid selling/wholesale price." });
+      return;
+    }
+
+    if (!addForm.gstPercent.trim() || Number.isNaN(gstPercent) || gstPercent < 0 || gstPercent > 100) {
+      setAddMessage({ tone: "error", text: "Please enter GST between 0 and 100." });
+      return;
+    }
+
+    setIsAdding(true);
+
+    try {
+      const createdItem = await inventoryService.createMedicineInventory({
+        medicineName: addForm.medicineName,
+        manufacturerName: addForm.manufacturerName,
+        categoryName: addForm.categoryName,
+        packSize: addForm.packSize,
+        hsnCode: addForm.hsnCode || undefined,
+        batchNumber: addForm.batchNumber,
+        expiryDate: addForm.expiryDate,
+        quantity,
+        mrp,
+        sellingPrice,
+        gstPercent,
+      });
+      setAddMessage({ tone: "success", text: `${createdItem.medicine.name} batch ${createdItem.batchNumber} added to inventory.` });
+      setAddForm(emptyAddForm);
+      await loadInventory();
+      setSelectedItemId(createdItem.id);
+      setForm({
+        quantity: String(createdItem.quantityOnHand),
+        sellingPrice: String(createdItem.medicine.sellingPrice),
+        expiryDate: toDateInputValue(createdItem.expiryDate),
+      });
+    } catch (addError) {
+      setAddMessage({ tone: "error", text: getApiErrorMessage(addError) });
+    } finally {
+      setIsAdding(false);
     }
   }
 
@@ -217,28 +308,40 @@ export default function Inventory() {
             </div>
             <div>
               <h2 className="text-lg font-bold text-navy">Add Inventory</h2>
-              <p className="mt-1 text-sm text-muted">
-                New inventory lots require a medicine, supplier, batch number, quantity, price, and expiry date. The current employee API does not expose a create-inventory endpoint, so new lots should be added through the admin/procurement flow.
-              </p>
+              <p className="mt-1 text-sm text-muted">Add a medicine and its first batch in one step. Existing matching medicines are reused safely.</p>
             </div>
           </div>
-          <div className="mt-5 grid gap-4">
-            <Select label="Medicine" value="" disabled>
-              <option value="">{medicineOptions.length ? "Select medicine in admin flow" : "No medicines loaded"}</option>
-              {medicineOptions.map((medicine) => (
-                <option key={medicine.id} value={medicine.id}>
-                  {medicine.name} ({medicine.sku})
-                </option>
-              ))}
-            </Select>
+          <form onSubmit={handleAddSubmit} className="mt-5 grid gap-4">
+            <Input label="Medicine name" value={addForm.medicineName} onChange={(value) => updateAddField("medicineName", value)} placeholder="Paracetamol 650" />
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="Batch number" value="" placeholder="Create endpoint not available" readOnly />
-              <Input label="Quantity" value="" placeholder="Create endpoint not available" readOnly />
+              <Input label="Manufacturer" value={addForm.manufacturerName} onChange={(value) => updateAddField("manufacturerName", value)} placeholder="Manufacturer name" />
+              <Input label="Category" value={addForm.categoryName} onChange={(value) => updateAddField("categoryName", value)} placeholder="Tablet" />
             </div>
-            <Button type="button" className="h-12 w-full" disabled>
-              Add inventory not available for employees
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Pack size" value={addForm.packSize} onChange={(value) => updateAddField("packSize", value)} placeholder="10 tablets" />
+              <Input label="HSN code" value={addForm.hsnCode} onChange={(value) => updateAddField("hsnCode", value)} placeholder="Optional" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Batch number" value={addForm.batchNumber} onChange={(value) => updateAddField("batchNumber", value)} placeholder="BATCH-001" />
+              <Input label="Expiry date" type="date" value={addForm.expiryDate} onChange={(value) => updateAddField("expiryDate", value)} placeholder="2027-12-31" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Quantity" type="number" value={addForm.quantity} onChange={(value) => updateAddField("quantity", value)} placeholder="500" />
+              <Input label="GST %" type="number" value={addForm.gstPercent} onChange={(value) => updateAddField("gstPercent", value)} placeholder="12" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="MRP" type="number" value={addForm.mrp} onChange={(value) => updateAddField("mrp", value)} placeholder="150" />
+              <Input label="Selling/wholesale price" type="number" value={addForm.sellingPrice} onChange={(value) => updateAddField("sellingPrice", value)} placeholder="120" />
+            </div>
+            {addMessage ? (
+              <div className={`rounded-lg px-3 py-2 text-sm font-semibold ${addMessage.tone === "error" ? "bg-red-50 text-error" : "bg-emerald-50 text-success"}`}>
+                {addMessage.text}
+              </div>
+            ) : null}
+            <Button type="submit" className="h-12 w-full" disabled={isAdding}>
+              {isAdding ? "Adding..." : "Add medicine and inventory"}
             </Button>
-          </div>
+          </form>
         </Card>
       </div>
     </section>
@@ -289,21 +392,6 @@ function Input({
         readOnly={readOnly}
         className="h-11 w-full rounded-lg border border-border px-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 read-only:bg-surface-soft"
       />
-    </label>
-  );
-}
-
-function Select({ label, value, disabled, children }: { label: string; value: string; disabled?: boolean; children: ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-bold text-navy">{label}</span>
-      <select
-        value={value}
-        disabled={disabled}
-        className="h-11 w-full rounded-lg border border-border bg-surface-soft px-3 text-sm text-muted outline-none transition disabled:cursor-not-allowed disabled:opacity-80"
-      >
-        {children}
-      </select>
     </label>
   );
 }
