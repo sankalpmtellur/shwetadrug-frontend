@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Boxes, ClipboardCheck, RefreshCcw, ShieldAlert } from "lucide-react";
+import { Boxes, ClipboardCheck, PackagePlus, RefreshCcw, ShieldAlert, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
@@ -84,13 +84,38 @@ export default function Dashboard() {
       ) : null}
 
       {dashboard ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <SummaryCard icon={<ClipboardCheck />} label="Orders" value={String(dashboard.pendingOrders)} detail="Incoming orders to review" />
-          <SummaryCard icon={<Boxes />} label="Low Stock Items" value={String(dashboard.lowStockItems)} detail="Update stock before dispatch" warning />
-          <SummaryCard icon={<ShieldAlert />} label="Expiring Inventory" value={String(dashboard.expiringInventory)} detail="Expiring in next 60 days" warning />
-        </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <SummaryCard icon={<ClipboardCheck />} label="Today/New Orders" value={String(dashboard.pendingOrders)} detail="Incoming orders to review" />
+            <SummaryCard icon={<Boxes />} label="Low Stock Items" value={String(dashboard.lowStockItems)} detail="Update stock before dispatch" warning />
+            <SummaryCard icon={<ShieldAlert />} label="Expiring Inventory" value={String(dashboard.expiringInventory)} detail="Expiring in next 60 days" warning />
+          </div>
+
+          <Card>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-lg font-black text-navy">Quick Actions</h2>
+                <p className="mt-1 text-sm text-muted">Open the pages employees use most during daily stock and order handling.</p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[520px]">
+                <QuickLink icon={<Truck />} label="Incoming Orders" to="/orders" />
+                <QuickLink icon={<PackagePlus />} label="Add Inventory" to="/inventory" />
+                <QuickLink icon={<ShieldAlert />} label="Expiry Control" to="/expiry" />
+              </div>
+            </div>
+          </Card>
+        </>
       ) : null}
     </>
+  );
+}
+
+function QuickLink({ icon, label, to }: { icon: ReactNode; label: string; to: string }) {
+  return (
+    <Link className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-bold text-navy transition hover:bg-surface-soft hover:text-primary" to={to}>
+      {icon}
+      {label}
+    </Link>
   );
 }
 

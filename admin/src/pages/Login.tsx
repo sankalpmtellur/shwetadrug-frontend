@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { BarChart3, Eye, EyeOff, LockKeyhole, ShieldCheck, UsersRound } from "lucide-react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
@@ -10,7 +10,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { clearError, error, isAuthenticated, isLoading, login } = useAuth();
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     clearError();
 
@@ -31,12 +31,27 @@ export default function Login() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md items-center justify-center">
-        <div className="w-full rounded-lg border border-border bg-white p-6 shadow-sm md:p-8">
-          <div className="text-center">
+    <main className="min-h-screen overflow-hidden bg-[#f6f8fc] px-4 py-8">
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1fr_.95fr]">
+        <section className="hidden lg:block">
+          <p className="text-xs font-black uppercase tracking-widest text-primary">Admin Portal</p>
+          <h1 className="mt-4 max-w-xl text-5xl font-black leading-tight text-navy">Command center for distributor operations.</h1>
+          <p className="mt-4 max-w-lg text-base font-semibold leading-7 text-muted">Monitor retailers, inventory, payments, deliveries, and operational exceptions from one focused workspace.</p>
+          <div className="mt-8 grid max-w-xl gap-3">
+            <Feature icon={<UsersRound />} title="Retailer Control" />
+            <Feature icon={<BarChart3 />} title="Operational Metrics" />
+            <Feature icon={<ShieldCheck />} title="Secure Admin Access" />
+          </div>
+        </section>
+
+        <div className="w-full rounded-lg border border-border bg-white p-6 shadow-xl shadow-slate-200/70 md:p-8">
+          <div>
+            <div className="mb-5 grid h-12 w-12 place-items-center rounded-lg bg-surface-strong text-primary">
+              <LockKeyhole className="h-6 w-6" />
+            </div>
             <p className="text-xs font-black uppercase tracking-widest text-primary">Admin Portal</p>
-            <h1 className="mt-2 text-3xl font-black text-navy">Login</h1>
+            <h1 className="mt-2 text-3xl font-black text-navy">Welcome back</h1>
+            <p className="mt-2 text-sm text-muted">Sign in to manage Shweta Drug Distributors.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
@@ -84,7 +99,7 @@ export default function Login() {
             ) : null}
 
             <button
-              className="h-12 w-full rounded-lg bg-primary text-sm font-bold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+              className="h-12 w-full rounded-lg bg-primary text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
               type="submit"
               disabled={isLoading || !email.trim() || !password}
             >
@@ -94,5 +109,14 @@ export default function Login() {
         </div>
       </div>
     </main>
+  );
+}
+
+function Feature({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-white/80 p-4 shadow-sm">
+      <div className="grid h-10 w-10 place-items-center rounded-lg bg-surface-strong text-primary">{icon}</div>
+      <p className="font-black text-navy">{title}</p>
+    </div>
   );
 }

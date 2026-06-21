@@ -1,4 +1,4 @@
-import { Boxes, LayoutDashboard, LogOut, Menu, ShieldAlert, Truck, X } from "lucide-react";
+import { Boxes, Headset, LayoutDashboard, LogOut, Menu, ShieldAlert, Truck, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "../common/Button";
 import { clearAuth } from "../../lib/auth";
@@ -55,7 +55,14 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boo
         ))}
       </nav>
 
-      <div className="mt-auto border-t border-border pt-4">
+      <div className="mt-auto space-y-3 border-t border-border pt-4">
+        <div className="rounded-lg bg-surface-soft px-4 py-3 text-xs font-bold text-muted">
+          <div className="flex items-center gap-2 text-navy">
+            <Headset className="h-4 w-4 text-primary" />
+            Support
+          </div>
+          <p className="mt-1">Contact - 6363002342</p>
+        </div>
         <Button
           className="w-full justify-start gap-3"
           variant="ghost"

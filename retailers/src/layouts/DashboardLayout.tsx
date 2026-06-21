@@ -17,8 +17,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <Navbar />
       </div>
 
-      <div className="mx-auto grid h-screen max-w-[1440px] grid-cols-1 pt-[68px] sm:pb-16">
-        <main className="min-w-0 overflow-y-auto pb-3 px-3 md:pb-8 md:px-8">
+      <div className="mx-auto grid h-screen max-w-[1440px] grid-cols-1 pt-[82px] sm:pb-16 md:pt-[88px]">
+        <main className="min-w-0 overflow-y-auto px-3 pb-6 md:px-8 md:pb-8">
           {children}
         </main>
       </div>

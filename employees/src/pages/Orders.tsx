@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { ClipboardCheck, Download, PackageSearch, RefreshCcw, Store } from "lucide-react";
+import { ChevronLeft, ChevronRight, ClipboardCheck, Download, MapPin, PackageSearch, RefreshCcw, Store } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Metric } from "../components/common/Metric";
@@ -15,6 +15,8 @@ export default function Orders() {
   const [selectedOrder, setSelectedOrder] = useState<EmployeeOrder | null>(null);
   const [detailsLoadingId, setDetailsLoadingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 8;
 
   async function loadOrders() {
     setIsLoading(true);
@@ -51,15 +53,21 @@ export default function Orders() {
   }, []);
 
   const visibleOrders = useMemo(
-    () =>
-      orders.filter((order) => {
+    () => {
+      const filtered = orders.filter((order) => {
         const search = query.trim().toLowerCase();
         if (!search) return true;
         const area = order.deliveryAddress?.city ?? "";
         return [order.orderNo, order.retailer.pharmacyName, area].some((value) => value.toLowerCase().includes(search));
-      }),
+      });
+
+      return filtered.sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
+    },
     [orders, query],
   );
+  const totalPages = Math.max(1, Math.ceil(visibleOrders.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageOrders = visibleOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const totalItems = visibleOrders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
 
@@ -132,7 +140,10 @@ export default function Orders() {
           </div>
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(1);
+            }}
             className="h-10 w-full rounded-lg border border-border px-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 sm:w-72"
             placeholder="Search orders..."
           />
@@ -151,8 +162,45 @@ export default function Orders() {
         ) : null}
 
         {!isLoading && !error ? (
+          <div className="md:hidden">
+            <div className="grid gap-3">
+              {pageOrders.map((order) => {
+                const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+                return (
+                  <div key={order.id} className="rounded-lg border border-border bg-white p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black text-primary">{order.orderNo}</p>
+                        <p className="mt-1 text-sm font-bold text-navy">{order.retailer.pharmacyName}</p>
+                      </div>
+                      <p className="text-right text-sm font-black text-navy">{formatCurrency(order.totalAmount)}</p>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-muted">
+                      <span>{formatArea(order)}</span>
+                      <span className="text-right">{itemCount} items</span>
+                      <span className="col-span-2">{formatDateTime(order.placedAt)}</span>
+                    </div>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <Button className="h-9 px-3" disabled={detailsLoadingId === order.id} onClick={() => void showDetails(order)} variant="secondary">
+                        {selectedOrder?.id === order.id ? "Hide" : detailsLoadingId === order.id ? "Loading..." : "Details"}
+                      </Button>
+                      <Button className="h-9 gap-2 px-3" disabled={downloadingInvoiceId === order.id} onClick={() => void downloadInvoice(order)} variant="secondary">
+                        <Download className="h-4 w-4" />
+                        {downloadingInvoiceId === order.id ? "Downloading..." : "Download Invoice"}
+                      </Button>
+                    </div>
+                    {selectedOrder?.id === order.id ? <OrderDetails order={selectedOrder} /> : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {!isLoading && !error ? (
+          <div className="hidden md:block">
           <Table headers={["Order", "Retailer", "Area", "Received", "Items", "Value", "Actions"]}>
-            {visibleOrders.map((order) => {
+            {pageOrders.map((order) => {
               const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
               return (
@@ -197,8 +245,12 @@ export default function Orders() {
               );
             })}
           </Table>
+          </div>
         ) : null}
         {!isLoading && !error && visibleOrders.length === 0 ? <p className="py-8 text-center text-sm text-muted">No orders match your search.</p> : null}
+        {!isLoading && !error && visibleOrders.length > 0 ? (
+          <Pagination page={currentPage} totalPages={totalPages} totalItems={visibleOrders.length} onPageChange={setPage} />
+        ) : null}
       </Card>
     </section>
   );
@@ -224,30 +276,71 @@ function formatCurrency(value: number) {
 }
 
 function OrderDetails({ order }: { order: EmployeeOrder }) {
+  const subtotal = order.items.reduce((sum, item) => sum + item.lineTotal, 0);
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.4fr_.8fr]">
-      <div>
-        <p className="text-sm font-bold text-navy">Items</p>
-        <div className="mt-2 grid gap-2">
+    <div className="mt-4 grid gap-4 rounded-lg border border-border bg-white p-4 lg:grid-cols-[1.3fr_.9fr]">
+      <div className="min-w-0">
+        <p className="text-sm font-black uppercase tracking-widest text-muted">Order Items</p>
+        <div className="mt-3 grid gap-2">
           {order.items.map((item) => (
-            <div key={item.id} className="rounded-lg bg-white p-3 text-sm">
-              <p className="font-bold text-navy">{item.medicineName}</p>
-              <p className="text-muted">
-                {item.quantity} units · {item.sku} · {formatCurrency(item.lineTotal)}
-              </p>
+            <div key={item.id} className="grid gap-2 rounded-lg bg-surface-soft p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="min-w-0">
+                <p className="break-words font-bold text-navy">{item.medicineName}</p>
+                <p className="text-muted">{item.quantity} units · {item.sku}</p>
+              </div>
+              <p className="font-black text-primary">{formatCurrency(item.lineTotal)}</p>
             </div>
           ))}
         </div>
       </div>
-      <div>
-        <p className="text-sm font-bold text-navy">Delivery Address</p>
-        <p className="mt-2 text-sm text-muted">
-          {order.deliveryAddress
-            ? [order.deliveryAddress.line1, order.deliveryAddress.line2, order.deliveryAddress.city, order.deliveryAddress.state, order.deliveryAddress.pincode]
-              .filter(Boolean)
-              .join(", ")
-            : "No delivery address attached."}
-        </p>
+      <div className="space-y-3">
+        <div className="rounded-lg bg-surface-soft p-3">
+          <p className="text-sm font-black text-navy">Retailer</p>
+          <p className="mt-1 text-sm font-semibold text-muted">{order.retailer.pharmacyName}</p>
+          <p className="text-sm text-muted">{order.retailer.ownerName}</p>
+        </div>
+        <div className="rounded-lg bg-surface-soft p-3">
+          <div className="flex items-center gap-2 text-sm font-black text-navy">
+            <MapPin className="h-4 w-4 text-primary" />
+            Delivery Address
+          </div>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            {order.deliveryAddress
+              ? [order.deliveryAddress.line1, order.deliveryAddress.line2, order.deliveryAddress.city, order.deliveryAddress.state, order.deliveryAddress.pincode]
+                .filter(Boolean)
+                .join(", ")
+              : "No delivery address attached."}
+          </p>
+        </div>
+        <div className="rounded-lg bg-primary px-4 py-3 text-white">
+          <div className="flex justify-between gap-3 text-sm">
+            <span>Items total</span>
+            <span className="font-black">{formatCurrency(subtotal)}</span>
+          </div>
+          <div className="mt-2 flex justify-between gap-3 text-base font-black">
+            <span>Order value</span>
+            <span>{formatCurrency(order.totalAmount)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Pagination({ page, totalPages, totalItems, onPageChange }: { page: number; totalPages: number; totalItems: number; onPageChange: (page: number) => void }) {
+  return (
+    <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm font-semibold text-muted">{totalItems} orders · Page {page} of {totalPages}</p>
+      <div className="flex gap-2">
+        <Button className="h-9 gap-2 px-3" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          <ChevronLeft className="h-4 w-4" />
+          Previous
+        </Button>
+        <Button className="h-9 gap-2 px-3" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+          Next
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );

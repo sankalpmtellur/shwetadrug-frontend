@@ -230,7 +230,50 @@ export default function Inventory() {
         <p className="mt-2 max-w-2xl text-sm text-muted">Update existing lots and review current stock records in one clean workflow.</p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[.85fr_1.15fr]">
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card>
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-surface-strong p-2 text-primary">
+              <PackagePlus className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-navy">Add Inventory</h2>
+              <p className="mt-1 text-sm text-muted">Add a medicine and its first batch in one step. Existing matching medicines are reused safely.</p>
+            </div>
+          </div>
+          <form onSubmit={handleAddSubmit} className="mt-5 grid gap-4">
+            <Input label="Medicine name" value={addForm.medicineName} onChange={(value) => updateAddField("medicineName", value)} placeholder="Paracetamol 650" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Manufacturer" value={addForm.manufacturerName} onChange={(value) => updateAddField("manufacturerName", value)} placeholder="Manufacturer name" />
+              <Input label="Category" value={addForm.categoryName} onChange={(value) => updateAddField("categoryName", value)} placeholder="Tablet" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Pack size" value={addForm.packSize} onChange={(value) => updateAddField("packSize", value)} placeholder="10 tablets" />
+              <Input label="HSN code" value={addForm.hsnCode} onChange={(value) => updateAddField("hsnCode", value)} placeholder="Optional" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Batch number" value={addForm.batchNumber} onChange={(value) => updateAddField("batchNumber", value)} placeholder="BATCH-001" />
+              <Input label="Expiry date" type="date" value={addForm.expiryDate} onChange={(value) => updateAddField("expiryDate", value)} placeholder="2027-12-31" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="Quantity" type="number" value={addForm.quantity} onChange={(value) => updateAddField("quantity", value)} placeholder="500" />
+              <Input label="GST %" type="number" value={addForm.gstPercent} onChange={(value) => updateAddField("gstPercent", value)} placeholder="12" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="MRP" type="number" value={addForm.mrp} onChange={(value) => updateAddField("mrp", value)} placeholder="150" />
+              <Input label="Selling/wholesale price" type="number" value={addForm.sellingPrice} onChange={(value) => updateAddField("sellingPrice", value)} placeholder="120" />
+            </div>
+            {addMessage ? (
+              <div className={`rounded-lg px-3 py-2 text-sm font-semibold ${addMessage.tone === "error" ? "bg-red-50 text-error" : "bg-emerald-50 text-success"}`}>
+                {addMessage.text}
+              </div>
+            ) : null}
+            <Button type="submit" className="h-12 w-full" disabled={isAdding}>
+              {isAdding ? "Adding..." : "Add medicine and inventory"}
+            </Button>
+          </form>
+        </Card>
+
         <Card>
           <h2 className="text-lg font-bold text-navy">Edit Existing Inventory</h2>
           <p className="mt-1 text-sm text-muted">Select an inventory lot from the table, then update quantity, selling price, or expiry date.</p>
@@ -256,7 +299,7 @@ export default function Inventory() {
           </form>
         </Card>
 
-        <Card className="xl:row-span-2">
+        <Card className="xl:col-span-2">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-bold text-navy">Current Inventory</h2>
@@ -301,48 +344,6 @@ export default function Inventory() {
           {!isLoading && !error && items.length === 0 ? <p className="py-8 text-center text-sm text-muted">No inventory lots found.</p> : null}
         </Card>
 
-        <Card>
-          <div className="flex items-start gap-3">
-            <div className="rounded-lg bg-surface-strong p-2 text-primary">
-              <PackagePlus className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-navy">Add Inventory</h2>
-              <p className="mt-1 text-sm text-muted">Add a medicine and its first batch in one step. Existing matching medicines are reused safely.</p>
-            </div>
-          </div>
-          <form onSubmit={handleAddSubmit} className="mt-5 grid gap-4">
-            <Input label="Medicine name" value={addForm.medicineName} onChange={(value) => updateAddField("medicineName", value)} placeholder="Paracetamol 650" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="Manufacturer" value={addForm.manufacturerName} onChange={(value) => updateAddField("manufacturerName", value)} placeholder="Manufacturer name" />
-              <Input label="Category" value={addForm.categoryName} onChange={(value) => updateAddField("categoryName", value)} placeholder="Tablet" />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="Pack size" value={addForm.packSize} onChange={(value) => updateAddField("packSize", value)} placeholder="10 tablets" />
-              <Input label="HSN code" value={addForm.hsnCode} onChange={(value) => updateAddField("hsnCode", value)} placeholder="Optional" />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="Batch number" value={addForm.batchNumber} onChange={(value) => updateAddField("batchNumber", value)} placeholder="BATCH-001" />
-              <Input label="Expiry date" type="date" value={addForm.expiryDate} onChange={(value) => updateAddField("expiryDate", value)} placeholder="2027-12-31" />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="Quantity" type="number" value={addForm.quantity} onChange={(value) => updateAddField("quantity", value)} placeholder="500" />
-              <Input label="GST %" type="number" value={addForm.gstPercent} onChange={(value) => updateAddField("gstPercent", value)} placeholder="12" />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="MRP" type="number" value={addForm.mrp} onChange={(value) => updateAddField("mrp", value)} placeholder="150" />
-              <Input label="Selling/wholesale price" type="number" value={addForm.sellingPrice} onChange={(value) => updateAddField("sellingPrice", value)} placeholder="120" />
-            </div>
-            {addMessage ? (
-              <div className={`rounded-lg px-3 py-2 text-sm font-semibold ${addMessage.tone === "error" ? "bg-red-50 text-error" : "bg-emerald-50 text-success"}`}>
-                {addMessage.text}
-              </div>
-            ) : null}
-            <Button type="submit" className="h-12 w-full" disabled={isAdding}>
-              {isAdding ? "Adding..." : "Add medicine and inventory"}
-            </Button>
-          </form>
-        </Card>
       </div>
     </section>
   );

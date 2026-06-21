@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Info, PackageCheck, Search, ShoppingBag, ShoppingCart } from "lucide-react";
+import { Info, Minus, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
 import { DashboardLayout } from "../layouts/DashboardLayout";
@@ -30,7 +30,6 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
   const [quantityErrors, setQuantityErrors] = useState<Record<string, string>>({});
-  const [activeQuantityAction, setActiveQuantityAction] = useState<Record<string, "cart" | "buy" | undefined>>({});
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +39,7 @@ export default function Dashboard() {
   const pageKey = `${search}:${pageSize}`;
   const [paging, setPaging] = useState({ key: pageKey, count: pageSize });
   const visibleCount = paging.key === pageKey ? paging.count : pageSize;
-  const { addItem, items } = useCart();
+  const { addItem, items, setItemQuantity } = useCart();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,28 +80,13 @@ export default function Dashboard() {
   const visibleMedicines = useMemo(() => medicines.slice(0, visibleCount), [medicines, visibleCount]);
   const canLoadMore = visibleCount < medicines.length;
 
-  const openQuantityBox = (medicineId: string, action: "cart" | "buy") => {
-    setActiveQuantityAction((current) => ({ ...current, [medicineId]: action }));
-    setQuantityDrafts((current) => ({ ...current, [medicineId]: "" }));
-    setQuantityErrors((current) => ({ ...current, [medicineId]: "" }));
-  };
-
-  const closeQuantityBox = (medicineId: string) => {
-    setActiveQuantityAction((current) => ({ ...current, [medicineId]: undefined }));
-    setQuantityDrafts((current) => ({ ...current, [medicineId]: "" }));
-    setQuantityErrors((current) => ({ ...current, [medicineId]: "" }));
-  };
-
   const updateQuantityDraft = (medicineId: string, value: string) => {
     setQuantityDrafts((current) => ({ ...current, [medicineId]: value.replace(/[^\d]/g, "") }));
     setQuantityErrors((current) => ({ ...current, [medicineId]: "" }));
   };
 
-  const confirmQuantity = async (medicine: Medicine) => {
-    const action = activeQuantityAction[medicine.id];
-    const qty = Number(quantityDrafts[medicine.id]);
-
-    if (!action) return;
+  const confirmQuantity = async (medicine: Medicine, action: "cart" | "buy") => {
+    const qty = Number(quantityDrafts[medicine.id] || "1");
 
     if (!Number.isInteger(qty) || qty <= 0) {
       setQuantityErrors((current) => ({ ...current, [medicine.id]: "Enter a valid quantity." }));
@@ -110,7 +94,7 @@ export default function Dashboard() {
     }
 
     await addItem(medicine, qty);
-    closeQuantityBox(medicine.id);
+    setQuantityDrafts((current) => ({ ...current, [medicine.id]: "1" }));
 
     if (action === "buy") {
       navigate("/checkout");
@@ -162,19 +146,17 @@ export default function Dashboard() {
               const cartItem = items.find((item) => item.medicineId === medicine.id);
               const isInCart = Boolean(cartItem);
               const cartQty = cartItem?.qty ?? 0;
-              const activeAction = activeQuantityAction[medicine.id];
-              const quantityDraft = quantityDrafts[medicine.id] ?? "";
+              const quantityDraft = quantityDrafts[medicine.id] ?? "1";
               const quantityError = quantityErrors[medicine.id];
 
               return (
                 <article
                   key={medicine.id}
-                  className="relative z-0 flex min-h-[280px] flex-col rounded-lg border border-border bg-white p-4 shadow-sm transition hover:border-primary/30"
+                  className="relative z-0 flex min-h-[250px] flex-col rounded-lg border border-border bg-white p-4 shadow-sm transition hover:border-primary/30"
                 >
                   <div className="flex items-start gap-3">
                     <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedMedicine(medicine)}>
-                      <h2 className="line-clamp-2 min-h-[44px] text-base font-black leading-snug text-navy">{medicine.name}</h2>
-                      <p className="mt-1 truncate text-xs font-semibold text-muted">{medicine.pack}</p>
+                      <h2 className="line-clamp-3 min-h-[58px] text-base font-black leading-snug text-navy">{medicine.name}</h2>
                     </button>
                     <button
                       type="button"
@@ -196,14 +178,23 @@ export default function Dashboard() {
                       <span className="text-xs font-black uppercase tracking-widest text-muted">Order Qty</span>
                       {isInCart ? <span className="text-xs font-black text-primary">In cart: {cartQty}</span> : null}
                     </div>
-                    {activeAction ? (
-                      <div className="mt-3 space-y-2">
+                    {isInCart ? (
+                      <div className="mt-3 grid grid-cols-[40px_1fr_40px] overflow-hidden rounded-lg border border-border bg-white">
+                        <button type="button" className="grid h-11 place-items-center text-muted" onClick={() => void setItemQuantity(medicine.id, cartQty - 1)} aria-label={`Decrease ${medicine.name}`}>
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <div className="grid h-11 place-items-center border-x border-border text-sm font-black text-navy">{cartQty}</div>
+                        <button type="button" className="grid h-11 place-items-center text-primary" onClick={() => void setItemQuantity(medicine.id, cartQty + 1)} aria-label={`Increase ${medicine.name}`}>
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-3">
                         <input
                           type="number"
                           min="1"
                           step="1"
                           inputMode="numeric"
-                          autoFocus
                           value={quantityDraft}
                           onChange={(event) => updateQuantityDraft(medicine.id, event.target.value)}
                           placeholder="Enter quantity"
@@ -211,27 +202,7 @@ export default function Dashboard() {
                           aria-label={`Enter quantity for ${medicine.name}`}
                         />
                         {quantityError ? <p className="text-xs font-bold text-error">{quantityError}</p> : null}
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => closeQuantityBox(medicine.id)}
-                            className="h-10 rounded-lg bg-white px-3 text-sm font-black text-muted transition hover:bg-surface-strong"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void confirmQuantity(medicine)}
-                            className="h-10 rounded-lg bg-primary px-3 text-sm font-black text-white transition hover:bg-primary/90"
-                          >
-                            {activeAction === "buy" ? "Go to Checkout" : "Add"}
-                          </button>
-                        </div>
                       </div>
-                    ) : (
-                      <p className="mt-2 min-h-[40px] text-sm font-semibold leading-5 text-muted">
-                        Tap Add to Cart or Buy, then enter the exact quantity.
-                      </p>
                     )}
                   </div>
 
@@ -241,16 +212,16 @@ export default function Dashboard() {
                         disabled={isOut}
                         variant={isOut ? "ghost" : "secondary"}
                         className="h-11 rounded-lg px-3 text-sm"
-                        onClick={() => openQuantityBox(medicine.id, "cart")}
+                        onClick={() => (isInCart ? navigate("/checkout") : void confirmQuantity(medicine, "cart"))}
                       >
                         <ShoppingCart className="h-4 w-4" />
-                        {isInCart ? "Add More" : "Add to Cart"}
+                        {isInCart ? "View Cart" : "Add to Cart"}
                       </Button>
                       <Button
                         disabled={isOut}
                         variant={isOut ? "ghost" : "primary"}
                         className="h-11 rounded-lg px-3 text-sm"
-                        onClick={() => openQuantityBox(medicine.id, "buy")}
+                        onClick={() => (isInCart ? navigate("/checkout") : void confirmQuantity(medicine, "buy"))}
                       >
                         <ShoppingBag className="h-4 w-4" />
                         Buy
