@@ -9,19 +9,19 @@ import { getApiErrorMessage, orderService, type BackendOrderStatus, type Employe
 
 const statusLabels: Record<BackendOrderStatus, string> = {
   PENDING: "Pending",
-  VERIFIED: "Verified",
-  PICKING: "Picking",
+  VERIFIED: "Pending",
+  PICKING: "Pending",
   PACKED: "Packed",
-  DISPATCHED: "Dispatched",
+  DISPATCHED: "Packed",
   DELIVERED: "Delivered",
   CANCELLED: "Cancelled",
-  RETURNED: "Returned",
+  RETURNED: "Cancelled",
 };
 
 const statusTones: Record<BackendOrderStatus, "green" | "orange" | "blue" | "red"> = {
   PENDING: "orange",
-  VERIFIED: "blue",
-  PICKING: "blue",
+  VERIFIED: "orange",
+  PICKING: "orange",
   PACKED: "blue",
   DISPATCHED: "blue",
   DELIVERED: "green",
@@ -29,12 +29,24 @@ const statusTones: Record<BackendOrderStatus, "green" | "orange" | "blue" | "red
   RETURNED: "red",
 };
 
-const statusActions: Partial<Record<BackendOrderStatus, { label: string; next: BackendOrderStatus }>> = {
-  PENDING: { label: "Mark Verified", next: "VERIFIED" },
-  VERIFIED: { label: "Mark Packed", next: "PACKED" },
-  PACKED: { label: "Mark Dispatched", next: "DISPATCHED" },
-  DISPATCHED: { label: "Mark Delivered", next: "DELIVERED" },
-};
+function canMarkPacked(status: BackendOrderStatus) {
+  return status === "PENDING" || status === "VERIFIED" || status === "PICKING";
+}
+
+function canMarkDelivered(status: BackendOrderStatus) {
+  return status === "PACKED" || status === "DISPATCHED";
+}
+
+function canCancel(status: BackendOrderStatus) {
+  return status === "PENDING" || status === "VERIFIED";
+}
+
+function statusMessage(nextStatus: BackendOrderStatus) {
+  if (nextStatus === "PACKED") return "Packed";
+  if (nextStatus === "DELIVERED") return "Delivered";
+  if (nextStatus === "CANCELLED") return "Cancelled";
+  return statusLabels[nextStatus];
+}
 
 export default function Orders() {
   const [query, setQuery] = useState("");
@@ -83,7 +95,7 @@ export default function Orders() {
 
     try {
       await orderService.updateStatus(order.id, nextStatus);
-      setMessage({ tone: "success", text: `Order ${order.orderNo} updated to ${statusLabels[nextStatus]}.` });
+      setMessage({ tone: "success", text: `Order ${order.orderNo} updated to ${statusMessage(nextStatus)}.` });
       setSelectedOrder(null);
       await loadOrders();
     } catch (updateError) {
@@ -184,7 +196,6 @@ export default function Orders() {
         {!isLoading && !error ? (
           <Table headers={["Order", "Retailer", "Area", "Received", "Items", "Value", "Status", "Actions"]}>
             {visibleOrders.map((order) => {
-              const action = statusActions[order.status];
               const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
               return (
@@ -218,13 +229,32 @@ export default function Orders() {
                           <Download className="h-4 w-4" />
                           {downloadingInvoiceId === order.id ? "Downloading..." : "Download Invoice"}
                         </Button>
-                        {action ? (
+                        {canMarkPacked(order.status) ? (
                           <Button
                             className="h-9 px-3"
                             disabled={updatingOrderId === order.id}
-                            onClick={() => void updateOrderStatus(order, action.next)}
+                            onClick={() => void updateOrderStatus(order, "PACKED")}
                           >
-                            {updatingOrderId === order.id ? "Updating..." : action.label}
+                            {updatingOrderId === order.id ? "Updating..." : "Mark Packed"}
+                          </Button>
+                        ) : null}
+                        {canMarkDelivered(order.status) ? (
+                          <Button
+                            className="h-9 px-3"
+                            disabled={updatingOrderId === order.id}
+                            onClick={() => void updateOrderStatus(order, "DELIVERED")}
+                          >
+                            {updatingOrderId === order.id ? "Updating..." : "Mark Delivered"}
+                          </Button>
+                        ) : null}
+                        {canCancel(order.status) ? (
+                          <Button
+                            className="h-9 px-3"
+                            disabled={updatingOrderId === order.id}
+                            onClick={() => void updateOrderStatus(order, "CANCELLED")}
+                            variant="secondary"
+                          >
+                            {updatingOrderId === order.id ? "Updating..." : "Cancel Order"}
                           </Button>
                         ) : null}
                       </div>

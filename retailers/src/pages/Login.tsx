@@ -76,12 +76,6 @@ export default function Login() {
           </div>
         </label>
 
-        <div className="flex justify-end text-sm">
-          <Link className="font-semibold text-primary" to="/forgot-password">
-            Forgot password?
-          </Link>
-        </div>
-
         <Button className="mt-2 w-full" type="submit" disabled={isLoading}>
           {isLoading ? "Signing in..." : "Sign in to portal"}
         </Button>
