@@ -111,18 +111,17 @@ export default function Orders() {
 
       {message ? (
         <div
-          className={`rounded-lg px-4 py-3 text-sm font-semibold ${
-            message.tone === "success" ? "bg-emerald-50 text-success" : "bg-red-50 text-error"
-          }`}
+          className={`rounded-lg px-4 py-3 text-sm font-semibold ${message.tone === "success" ? "bg-emerald-50 text-success" : "bg-red-50 text-error"
+            }`}
         >
           {message.text}
         </div>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Metric icon={<ClipboardCheck />} label="Orders" value={String(visibleOrders.length)} tone="text-primary" hint="Visible now" />
-        <Metric icon={<PackageSearch />} label="Items To Prepare" value={String(totalItems)} tone="text-warning" hint="Across visible orders" />
-        <Metric icon={<Store />} label="Retailers" value={String(new Set(visibleOrders.map((order) => order.retailer.id)).size)} tone="text-success" hint="Unique stores" />
+        <Metric icon={<ClipboardCheck />} label="Orders" value={String(visibleOrders.length)} tone="text-primary" />
+        <Metric icon={<PackageSearch />} label="Items To Prepare" value={String(totalItems)} tone="text-warning" />
+        <Metric icon={<Store />} label="Retailers" value={String(new Set(visibleOrders.map((order) => order.retailer.id)).size)} tone="text-success" />
       </div>
 
       <Card>
@@ -197,7 +196,7 @@ export default function Orders() {
                 </Fragment>
               );
             })}
-        </Table>
+          </Table>
         ) : null}
         {!isLoading && !error && visibleOrders.length === 0 ? <p className="py-8 text-center text-sm text-muted">No orders match your search.</p> : null}
       </Card>
@@ -245,8 +244,8 @@ function OrderDetails({ order }: { order: EmployeeOrder }) {
         <p className="mt-2 text-sm text-muted">
           {order.deliveryAddress
             ? [order.deliveryAddress.line1, order.deliveryAddress.line2, order.deliveryAddress.city, order.deliveryAddress.state, order.deliveryAddress.pincode]
-                .filter(Boolean)
-                .join(", ")
+              .filter(Boolean)
+              .join(", ")
             : "No delivery address attached."}
         </p>
       </div>
