@@ -56,7 +56,7 @@ function Home() {
               </Link>
               <Link
                 to="/signup"
-                className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] transition-all w-full sm:w-auto"
+                className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] transition-all w-full sm:w-auto"
               >
                 Create Retailer Account
               </Link>
