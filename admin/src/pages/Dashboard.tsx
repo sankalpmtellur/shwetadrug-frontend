@@ -90,7 +90,11 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    void loadDashboard();
+    const timeoutId = window.setTimeout(() => {
+      void loadDashboard();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadDashboard]);
 
   // Temporary mock chart data: the admin dashboard API currently exposes aggregate KPIs only.

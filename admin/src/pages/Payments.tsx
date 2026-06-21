@@ -31,7 +31,11 @@ export default function Payments() {
   }, []);
 
   useEffect(() => {
-    void loadPayments();
+    const timeoutId = window.setTimeout(() => {
+      void loadPayments();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadPayments]);
 
   const paidTotal = useMemo(() => items.filter((item) => item.status === "PAID").reduce((sum, item) => sum + item.amount, 0), [items]);

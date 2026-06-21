@@ -31,7 +31,11 @@ export default function Deliveries() {
   }, []);
 
   useEffect(() => {
-    void loadDeliveries();
+    const timeoutId = window.setTimeout(() => {
+      void loadDeliveries();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadDeliveries]);
 
   const activeCount = useMemo(() => items.filter((item) => item.status === "PACKED" || item.status === "DISPATCHED").length, [items]);

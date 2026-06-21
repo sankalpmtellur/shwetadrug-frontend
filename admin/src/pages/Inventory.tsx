@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Boxes, PackageSearch, RefreshCcw } from "lucide-react";
-import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Metric } from "../components/common/Metric";
@@ -8,11 +7,10 @@ import { Cell, Table } from "../components/common/Table";
 import { inventoryService } from "../services/inventoryService";
 import type { InventoryItem, ListMeta } from "../services/inventoryService";
 
-const inventoryStatuses = ["HEALTHY", "LOW", "REORDER", "OUT_OF_STOCK", "EXPIRED", "BLOCKED"];
+const pageSize = 10;
 
 type InventoryDraft = {
   quantity: string;
-  status: string;
 };
 
 function formatCount(value: number | null | undefined) {
@@ -37,12 +35,6 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function getStatusTone(status: string, availableQuantity: number): "green" | "orange" | "red" | "blue" {
-  if (availableQuantity <= 0 || status === "OUT_OF_STOCK") return "red";
-  if (status === "LOW" || status === "REORDER") return "orange";
-  return "green";
-}
-
 function isNeedsDecision(item: InventoryItem) {
   return item.availableQuantity <= item.medicine.reorderLevel || item.status === "LOW" || item.status === "REORDER" || item.status === "OUT_OF_STOCK";
 }
@@ -55,6 +47,7 @@ export default function Inventory() {
   const [drafts, setDrafts] = useState<Record<string, InventoryDraft>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const loadInventory = useCallback(async () => {
     setIsLoading(true);
@@ -72,21 +65,24 @@ export default function Inventory() {
   }, []);
 
   useEffect(() => {
-    void loadInventory();
+    const timeoutId = window.setTimeout(() => {
+      void loadInventory();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadInventory]);
 
   function getDraft(item: InventoryItem) {
-    return drafts[item.id] ?? { quantity: String(item.quantityOnHand), status: item.status };
+    return drafts[item.id] ?? { quantity: String(item.quantityOnHand) };
   }
 
   function updateDraft(item: InventoryItem, draft: Partial<InventoryDraft>) {
     setDrafts((current) => ({
       ...current,
-      [item.id]: {
-        quantity: current[item.id]?.quantity ?? String(item.quantityOnHand),
-        status: current[item.id]?.status ?? item.status,
-        ...draft,
-      },
+        [item.id]: {
+          quantity: current[item.id]?.quantity ?? String(item.quantityOnHand),
+          ...draft,
+        },
     }));
   }
 
@@ -105,7 +101,6 @@ export default function Inventory() {
     try {
       const updated = await inventoryService.updateInventory(item.id, {
         quantity,
-        status: draft.status,
       });
       setItems((current) => current.map((row) => (row.id === item.id ? updated : row)));
       setDrafts((current) => {
@@ -122,6 +117,9 @@ export default function Inventory() {
 
   const needsDecisionCount = useMemo(() => items.filter(isNeedsDecision).length, [items]);
   const stockoutCount = useMemo(() => items.filter((item) => item.availableQuantity <= 0 || item.status === "OUT_OF_STOCK").length, [items]);
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <section className="space-y-6">
@@ -135,7 +133,7 @@ export default function Inventory() {
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-black text-navy">Inventory Lots</h2>
-            <p className="text-sm text-muted">Live stock, expiry, and reorder status from backend inventory.</p>
+            <p className="text-sm text-muted">Useful stock quantities, expiry dates, and pricing for launch operations.</p>
           </div>
           {error ? (
             <Button type="button" onClick={() => void loadInventory()}>
@@ -150,34 +148,17 @@ export default function Inventory() {
         {!isLoading && !error && items.length === 0 ? <p className="text-sm font-bold text-muted">No inventory lots found.</p> : null}
 
         {!isLoading && !error && items.length > 0 ? (
-          <Table headers={["SKU", "Medicine", "Batch", "Available", "Stock Value", "Expiry", "Status", "Update"]}>
-            {items.map((item) => {
+          <Table headers={["Medicine", "Batch", "Expiry", "Quantity", "MRP", "Selling/Wholesale Price", "Actions/Edit"]}>
+            {pageItems.map((item) => {
               const draft = getDraft(item);
               return (
                 <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
-                  <Cell strong>{item.medicine.sku}</Cell>
-                  <Cell>{item.medicine.name}</Cell>
+                  <Cell strong>{item.medicine.name}</Cell>
                   <Cell>{item.batchNumber}</Cell>
-                  <Cell>{formatCount(item.availableQuantity)}</Cell>
-                  <Cell>{formatCurrency(item.costPrice === null ? null : item.costPrice * item.quantityOnHand)}</Cell>
                   <Cell>{formatDate(item.expiryDate)}</Cell>
-                  <Cell>
-                    <div className="flex flex-col gap-2">
-                      <Badge tone={getStatusTone(item.status, item.availableQuantity)}>{item.status.replaceAll("_", " ")}</Badge>
-                      <select
-                        className="h-10 rounded-lg border border-border bg-white px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
-                        value={draft.status}
-                        onChange={(event) => updateDraft(item, { status: event.target.value })}
-                        disabled={updatingId === item.id}
-                      >
-                        {inventoryStatuses.map((status) => (
-                          <option key={status} value={status}>
-                            {status.replaceAll("_", " ")}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </Cell>
+                  <Cell>{formatCount(item.availableQuantity)}</Cell>
+                  <Cell>{formatCurrency(item.medicine.mrp)}</Cell>
+                  <Cell>{formatCurrency(item.medicine.sellingPrice)}</Cell>
                   <Cell>
                     <div className="flex min-w-40 items-center gap-2">
                       <input
@@ -198,7 +179,20 @@ export default function Inventory() {
             })}
           </Table>
         ) : null}
+        {!isLoading && !error && items.length > 0 ? <Pagination page={currentPage} totalPages={totalPages} totalItems={items.length} onPageChange={setPage} /> : null}
       </Card>
     </section>
+  );
+}
+
+function Pagination({ page, totalPages, totalItems, onPageChange }: { page: number; totalPages: number; totalItems: number; onPageChange: (page: number) => void }) {
+  return (
+    <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm font-semibold text-muted">{formatCount(totalItems)} lots · Page {page} of {totalPages}</p>
+      <div className="flex gap-2">
+        <Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Previous</Button>
+        <Button variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>Next</Button>
+      </div>
+    </div>
   );
 }

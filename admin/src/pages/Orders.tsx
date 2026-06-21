@@ -41,7 +41,11 @@ export default function Orders() {
   }, []);
 
   useEffect(() => {
-    void loadOrders();
+    const timeoutId = window.setTimeout(() => {
+      void loadOrders();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadOrders]);
 
   async function handleOrderStatusUpdate(order: Order) {

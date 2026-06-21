@@ -79,6 +79,9 @@ export const operationsService = {
   getMedicines() {
     return getList<Medicine>("/medicines");
   },
+  deleteMedicine(id: string) {
+    return apiResult<Medicine>(api.delete(`/medicines/${id}`));
+  },
   getOrders() {
     return getList<Order>("/orders");
   },

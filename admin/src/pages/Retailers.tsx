@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Building2, IndianRupee, Store } from "lucide-react";
-import { Badge } from "../components/common/Badge";
+import { Building2, Store, UserCheck } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Metric } from "../components/common/Metric";
@@ -10,32 +9,24 @@ import type { RetailerAccount } from "../services/retailerService";
 import type { ListMeta } from "../services/inventoryService";
 
 const retailerStatuses = ["ACTIVE", "REVIEW", "REJECTED", "SUSPENDED"];
+const pageSize = 10;
 
 function formatCount(value: number | null | undefined) {
   return typeof value === "number" ? new Intl.NumberFormat("en-IN").format(value) : "-";
 }
 
-function formatCurrency(value: number | null | undefined) {
-  return typeof value === "number"
-    ? new Intl.NumberFormat("en-IN", {
-        currency: "INR",
-        maximumFractionDigits: 0,
-        style: "currency",
-      }).format(value)
-    : "-";
-}
-
-function getStatusTone(status: string): "green" | "orange" | "red" | "blue" {
-  if (status === "ACTIVE") return "green";
-  if (status === "REVIEW" || status === "PENDING_VERIFICATION") return "orange";
-  if (status === "SUSPENDED" || status === "REJECTED") return "red";
-  return "blue";
-}
-
 function getArea(retailer: RetailerAccount) {
   const address = retailer.addresses.find((item) => item.isDefault) ?? retailer.addresses[0];
   if (!address) return "-";
-  return [address.city, address.state].filter(Boolean).join(", ");
+  return [address.line1, address.city, address.state].filter(Boolean).join(", ");
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 }
 
 export default function Retailers() {
@@ -46,6 +37,7 @@ export default function Retailers() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [temporaryPasswords, setTemporaryPasswords] = useState<Record<string, string>>({});
+  const [page, setPage] = useState(1);
 
   const loadRetailers = useCallback(async () => {
     setIsLoading(true);
@@ -63,7 +55,11 @@ export default function Retailers() {
   }, []);
 
   useEffect(() => {
-    void loadRetailers();
+    const timeoutId = window.setTimeout(() => {
+      void loadRetailers();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadRetailers]);
 
   function updateTemporaryPassword(id: string, value: string) {
@@ -98,22 +94,25 @@ export default function Retailers() {
     void handleStatusChange(row.id, "ACTIVE", temporaryPassword);
   }
 
-  const outstandingTotal = useMemo(() => retailers.reduce((sum, row) => sum + row.outstandingBalance, 0), [retailers]);
   const reviewCount = useMemo(() => retailers.filter((row) => row.status === "REVIEW" || row.status === "PENDING_VERIFICATION").length, [retailers]);
+  const activeCount = useMemo(() => retailers.filter((row) => row.status === "ACTIVE").length, [retailers]);
+  const totalPages = Math.max(1, Math.ceil(retailers.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = retailers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <section className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
         <Metric icon={<Store />} label="Retailers" value={formatCount(meta.total ?? retailers.length)} hint="Live retailer accounts" tone="blue" />
-        <Metric icon={<Building2 />} label="Visible Accounts" value={formatCount(retailers.length)} hint="Loaded in current view" tone="green" />
-        <Metric icon={<IndianRupee />} label="Review Accounts" value={formatCount(reviewCount)} hint={`${formatCurrency(outstandingTotal)} outstanding`} tone="orange" />
+        <Metric icon={<UserCheck />} label="Active" value={formatCount(activeCount)} hint="Approved accounts" tone="green" />
+        <Metric icon={<Building2 />} label="Needs Review" value={formatCount(reviewCount)} hint="Pending or review accounts" tone="orange" />
       </div>
 
       <Card>
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-black text-navy">Retailer Accounts</h2>
-            <p className="text-sm text-muted">Live account, credit, and verification status from backend retailers.</p>
+            <p className="text-sm text-muted">Retailer approval and contact management for launch operations.</p>
           </div>
           {error ? (
             <Button type="button" onClick={() => void loadRetailers()}>
@@ -128,17 +127,15 @@ export default function Retailers() {
         {!isLoading && !error && retailers.length === 0 ? <p className="text-sm font-bold text-muted">No retailer accounts found.</p> : null}
 
         {!isLoading && !error && retailers.length > 0 ? (
-          <Table headers={["Retailer", "Owner", "Area", "Credit Limit", "Outstanding", "Status", "Update"]}>
-            {retailers.map((row) => (
+          <Table headers={["Pharmacy", "Owner", "Phone", "Email", "Area/Address", "Signup Date", "Actions"]}>
+            {pageItems.map((row) => (
               <tr key={row.id} className="border-t border-border hover:bg-surface-soft/70">
                 <Cell strong>{row.pharmacyName}</Cell>
                 <Cell>{row.ownerName}</Cell>
+                <Cell>{row.mobile}</Cell>
+                <Cell>{row.email}</Cell>
                 <Cell>{getArea(row)}</Cell>
-                <Cell>{formatCurrency(row.creditLimit)}</Cell>
-                <Cell>{formatCurrency(row.outstandingBalance)}</Cell>
-                <Cell>
-                  <Badge tone={getStatusTone(row.status)}>{row.status.replaceAll("_", " ")}</Badge>
-                </Cell>
+                <Cell>{formatDate(row.createdAt)}</Cell>
                 <Cell>
                   {row.status === "PENDING_VERIFICATION" ? (
                     <div className="flex min-w-64 flex-col gap-2">
@@ -178,7 +175,20 @@ export default function Retailers() {
             ))}
           </Table>
         ) : null}
+        {!isLoading && !error && retailers.length > 0 ? <Pagination page={currentPage} totalPages={totalPages} totalItems={retailers.length} onPageChange={setPage} /> : null}
       </Card>
     </section>
+  );
+}
+
+function Pagination({ page, totalPages, totalItems, onPageChange }: { page: number; totalPages: number; totalItems: number; onPageChange: (page: number) => void }) {
+  return (
+    <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm font-semibold text-muted">{formatCount(totalItems)} retailers · Page {page} of {totalPages}</p>
+      <div className="flex gap-2">
+        <Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Previous</Button>
+        <Button variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>Next</Button>
+      </div>
+    </div>
   );
 }

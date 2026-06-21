@@ -31,7 +31,11 @@ export default function Claims() {
   }, []);
 
   useEffect(() => {
-    void loadClaims();
+    const timeoutId = window.setTimeout(() => {
+      void loadClaims();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [loadClaims]);
 
   const openCount = useMemo(() => items.filter((item) => item.status === "REQUESTED" || item.status === "INSPECT").length, [items]);
