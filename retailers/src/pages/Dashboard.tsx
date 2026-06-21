@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, Info, PackageCheck, Search, ShoppingBag, ShoppingCart } from "lucide-react";
+import { Info, PackageCheck, Search, ShoppingBag, ShoppingCart } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
 import { DashboardLayout } from "../layouts/DashboardLayout";
@@ -120,10 +120,8 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        {/* This sits perfectly flush at top-0 and seals cards dynamically behind it with solid bg-background */}
         <div className="sticky top-0 z-30 -mx-3 bg-background px-3 pb-4 pt-3 border-b border-slate-200/80 md:-mx-8 md:px-8 md:pt-6">
           <div className="mx-auto max-w-6xl">
-            {/* Search Box Wrapper */}
             <div className="rounded-xl border border-slate-200/80 bg-white p-2 shadow-sm transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:shadow-md">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-blue-500" />
@@ -322,10 +320,6 @@ export default function Dashboard() {
               <Detail label="Expiry" value={selectedMedicine.expiry} />
               <Detail label="GST" value={`${selectedMedicine.gst}%`} />
               <Detail label="SKU" value={selectedMedicine.sku} />
-            </div>
-            <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-700">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              Please confirm pack size and quantity before adding to cart.
             </div>
           </div>
         ) : null}
