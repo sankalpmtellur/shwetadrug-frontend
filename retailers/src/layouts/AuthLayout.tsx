@@ -24,7 +24,7 @@ export function AuthLayout({
             </h1>
 
             <p className="mt-4 max-w-md text-white/80">
-              A simple B2B portal for retailers to access products, place
+              A B2B portal for retailers to access products, place
               orders, and manage supply requirements efficiently.
             </p>
           </div>

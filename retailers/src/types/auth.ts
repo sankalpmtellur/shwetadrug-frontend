@@ -33,7 +33,11 @@ export type RetailerSignupPayload = {
   email: string;
   phone: string;
   shopName: string;
+  gstNumber?: string;
   address: string;
+  city: string;
+  state: string;
+  pincode: string;
 };
 
 export type ForgotPasswordPayload = {

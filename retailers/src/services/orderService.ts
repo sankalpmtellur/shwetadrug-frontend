@@ -1,11 +1,11 @@
 import { api } from "../lib/api";
 import type { ApiResponse } from "../types/auth";
-import type { CartItem, CreatedOrder, OrderInvoice, PaymentMethod, RetailerOrder } from "../types";
+import type { CartItem, CreatedOrder, OrderInvoice, RetailerOrder } from "../types";
 
 const CREATED_ORDER_KEY = "shweta-retailer-created-order";
 
 type CreateOrderPayload = {
-  paymentMethod: PaymentMethod;
+  paymentMethod: "CASH_ON_DELIVERY";
   deliveryAddressId?: string;
   items: Array<{
     medicineId: string;
@@ -30,9 +30,9 @@ export function getCreatedOrder() {
 }
 
 export const orderService = {
-  async createOrder(items: CartItem[], paymentMethod: PaymentMethod, deliveryAddressId?: string) {
+  async createOrder(items: CartItem[], deliveryAddressId?: string) {
     const payload: CreateOrderPayload = {
-      paymentMethod,
+      paymentMethod: "CASH_ON_DELIVERY",
       deliveryAddressId,
       items: items.map((item) => ({
         medicineId: item.medicineId,

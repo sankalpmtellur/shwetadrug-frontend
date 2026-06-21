@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Building2, Edit3, Mail, MapPin, Save, UserRound, X } from "lucide-react";
+import { ArrowLeft, Building2, Edit3, Eye, EyeOff, LockKeyhole, Mail, MapPin, Save, UserRound, X } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Input } from "../components/common/Input";
@@ -28,6 +28,11 @@ export default function Profile() {
     currentPassword: "",
     newPassword: "",
     confirmNewPassword: "",
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmNewPassword: false,
   });
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -152,7 +157,7 @@ export default function Profile() {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-5xl space-y-5">
+      <div className="mx-auto max-w-6xl space-y-5">
         <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-bold text-primary">
           <ArrowLeft className="h-4 w-4" />
           Back to dashboard
@@ -216,9 +221,10 @@ export default function Profile() {
               </div>
             </section>
 
-            <div className="grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
+            <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
               <Card className="p-5">
                 <h2 className="text-xl font-black text-navy">Account Details</h2>
+                <p className="mt-1 text-sm font-semibold text-muted">Business identity and primary delivery address.</p>
                 <div className="mt-5 grid gap-3">
                   <Info icon={<Building2 />} label="Business Name" value={profile.retailer?.pharmacyName ?? "Not available"} />
                   <Info icon={<Mail />} label="Email" value={profile.email} />
@@ -226,8 +232,13 @@ export default function Profile() {
                 </div>
               </Card>
 
-              <Card className="p-5">
-                <h2 className="text-xl font-black text-navy">{isEditing ? "Edit Profile & Address" : "Profile Information"}</h2>
+              <Card className="p-5 sm:p-6">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h2 className="text-xl font-black text-navy">{isEditing ? "Edit Profile & Address" : "Profile Information"}</h2>
+                    <p className="text-sm font-semibold text-muted">Keep owner contact and dispatch address accurate.</p>
+                  </div>
+                </div>
 
                 <div className="mt-5 space-y-6">
                   <section>
@@ -269,36 +280,38 @@ export default function Profile() {
               </Card>
             </div>
 
-            <Card className="p-5">
-              <h2 className="text-xl font-black text-navy">Change Password</h2>
-              <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                <label className="block text-sm font-semibold text-navy">
-                  Current Password
-                  <Input
-                    className="mt-2"
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))}
-                  />
-                </label>
-                <label className="block text-sm font-semibold text-navy">
-                  New Password
-                  <Input
-                    className="mt-2"
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(event) => setPasswordForm((current) => ({ ...current, newPassword: event.target.value }))}
-                  />
-                </label>
-                <label className="block text-sm font-semibold text-navy">
-                  Confirm New Password
-                  <Input
-                    className="mt-2"
-                    type="password"
-                    value={passwordForm.confirmNewPassword}
-                    onChange={(event) => setPasswordForm((current) => ({ ...current, confirmNewPassword: event.target.value }))}
-                  />
-                </label>
+            <Card className="p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-strong text-primary">
+                  <LockKeyhole className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-navy">Change Password</h2>
+                  <p className="mt-1 text-sm font-semibold text-muted">Use your current password before setting a new one.</p>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-4 lg:grid-cols-3">
+                <PasswordInput
+                  label="Current Password"
+                  value={passwordForm.currentPassword}
+                  show={showPasswords.currentPassword}
+                  onToggle={() => setShowPasswords((current) => ({ ...current, currentPassword: !current.currentPassword }))}
+                  onChange={(value) => setPasswordForm((current) => ({ ...current, currentPassword: value }))}
+                />
+                <PasswordInput
+                  label="New Password"
+                  value={passwordForm.newPassword}
+                  show={showPasswords.newPassword}
+                  onToggle={() => setShowPasswords((current) => ({ ...current, newPassword: !current.newPassword }))}
+                  onChange={(value) => setPasswordForm((current) => ({ ...current, newPassword: value }))}
+                />
+                <PasswordInput
+                  label="Confirm New Password"
+                  value={passwordForm.confirmNewPassword}
+                  show={showPasswords.confirmNewPassword}
+                  onToggle={() => setShowPasswords((current) => ({ ...current, confirmNewPassword: !current.confirmNewPassword }))}
+                  onChange={(value) => setPasswordForm((current) => ({ ...current, confirmNewPassword: value }))}
+                />
               </div>
               <div className="mt-4 flex justify-end">
                 <Button type="button" onClick={changePassword} disabled={isChangingPassword}>
@@ -320,5 +333,41 @@ function Info({ icon, label, value }: { icon: ReactNode; label: string; value: s
       <p className="text-xs font-bold uppercase tracking-widest text-muted">{label}</p>
       <p className="mt-1 break-words font-bold text-navy">{value}</p>
     </div>
+  );
+}
+
+function PasswordInput({
+  label,
+  value,
+  show,
+  onToggle,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  show: boolean;
+  onToggle: () => void;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block text-sm font-semibold text-navy">
+      {label}
+      <div className="relative mt-2">
+        <Input
+          className="pr-11"
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition hover:text-primary"
+          aria-label={show ? `Hide ${label}` : `Show ${label}`}
+        >
+          {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        </button>
+      </div>
+    </label>
   );
 }

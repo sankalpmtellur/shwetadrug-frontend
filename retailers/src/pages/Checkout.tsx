@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, CreditCard, MapPin, Minus, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, MapPin, Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Badge } from "../components/common/Badge";
@@ -11,12 +11,11 @@ import { currency } from "../utils/formatters";
 import { useCart } from "../hooks/useCart";
 import { orderService, saveCreatedOrder } from "../services/orderService";
 import { formatDefaultAddress, profileService } from "../services/profileService";
-import type { DefaultAddress, PaymentMethod } from "../types";
+import type { DefaultAddress } from "../types";
 
 export default function Checkout() {
   const { clearCart, items, removeItem, setItemQuantity, subtotal } = useCart();
   const [defaultAddress, setDefaultAddress] = useState<DefaultAddress | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI");
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const navigate = useNavigate();
   const gst = Math.round(subtotal * 0.12);
@@ -49,7 +48,7 @@ export default function Checkout() {
     setIsCreatingOrder(true);
 
     try {
-      const order = await orderService.createOrder(items, paymentMethod, deliveryAddressId);
+      const order = await orderService.createOrder(items, deliveryAddressId);
       saveCreatedOrder(order);
       try {
         await clearCart();
@@ -76,33 +75,6 @@ export default function Checkout() {
 
         <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
           <div className="space-y-5">
-            <Card className="p-5">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-lg bg-surface-strong text-primary">
-                  <CreditCard className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-navy">Payment Option</h2>
-                  <p className="text-sm font-semibold text-muted">Choose how you want to pay for this order.</p>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <PaymentOption
-                  checked={paymentMethod === "UPI"}
-                  title="UPI"
-                  description="Pay with any UPI app after order confirmation."
-                  onChange={() => setPaymentMethod("UPI")}
-                />
-                <PaymentOption
-                  checked={paymentMethod === "CASH_ON_DELIVERY"}
-                  title="Cash on Delivery"
-                  description="Pay cash when the order is delivered."
-                  onChange={() => setPaymentMethod("CASH_ON_DELIVERY")}
-                />
-              </div>
-            </Card>
-
             <Card className="p-5">
               <div className="mb-4 flex items-center gap-3">
                 <div className="grid h-10 w-10 place-items-center rounded-lg bg-surface-strong text-primary">
@@ -172,7 +144,6 @@ export default function Checkout() {
               <SummaryRow label="Subtotal" value={currency(subtotal)} />
               <SummaryRow label="GST Estimate" value={currency(gst)} />
               <SummaryRow label="Delivery" value="Free" />
-              <SummaryRow label="Payment" value={paymentMethod === "UPI" ? "UPI" : "Cash"} />
               <div className="my-4 border-t border-border" />
               <SummaryRow label="Payable Amount" value={currency(subtotal + gst)} strong />
               <Button className="mt-5 h-12 w-full" disabled={!items.length || !hasDeliveryAddress || isCreatingOrder} onClick={confirmOrder}>
@@ -183,18 +154,6 @@ export default function Checkout() {
         </div>
       </PageWrapper>
     </DashboardLayout>
-  );
-}
-
-function PaymentOption({ checked, title, description, onChange }: { checked: boolean; title: string; description: string; onChange: () => void }) {
-  return (
-    <label className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${checked ? "border-primary bg-surface-soft" : "border-border bg-white hover:bg-surface-soft"}`}>
-      <input type="radio" checked={checked} onChange={onChange} className="mt-1 text-primary focus:ring-primary" />
-      <span>
-        <span className="block font-black text-navy">{title}</span>
-        <span className="mt-1 block text-sm font-semibold leading-5 text-muted">{description}</span>
-      </span>
-    </label>
   );
 }
 

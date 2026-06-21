@@ -40,10 +40,10 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout title="Welcome" subtitle="Sign in to continue ordering medicines for your pharmacy.">
+    <AuthLayout title="Welcome" subtitle="Login to continue ordering medicines for your pharmacy.">
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block text-sm font-semibold text-navy">
-          Username
+          Email
           <Input
             className="mt-2"
             type="email"
@@ -77,7 +77,7 @@ export default function Login() {
         </label>
 
         <Button className="mt-2 w-full" type="submit" disabled={isLoading}>
-          {isLoading ? "Signing in..." : "Sign in to portal"}
+          {isLoading ? "Logging in..." : "Login to portal"}
         </Button>
       </form>
 

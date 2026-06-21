@@ -120,19 +120,27 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="sticky top-0 z-[80] isolate -mx-3 flex min-h-[92px] items-center overflow-hidden border-b border-border bg-background px-3 py-4 shadow-[0_18px_34px_rgba(11,28,48,0.16)] before:absolute before:inset-x-0 before:-top-10 before:h-10 before:bg-background after:absolute after:inset-x-0 after:bottom-[-18px] after:h-[18px] after:bg-background md:-mx-8 md:px-8">
-          <div className="absolute inset-0 -z-10 bg-background" />
-          <div className="relative z-10 mx-auto w-full max-w-4xl rounded-lg bg-background">
-            <label className="relative block">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by medicine name, SKU, generic name..."
-                className="h-14 w-full rounded-lg border border-border bg-white py-4 pl-12 pr-4 text-base font-semibold text-navy shadow-sm outline-none placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10"
-              />
-            </label>
+        <div className="sticky top-0 z-30 -mx-3 border-b border-border bg-background/98 px-3 pb-4 pt-3 backdrop-blur md:-mx-8 md:px-8 md:pt-0">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-primary">Inventory</p>
+                <h1 className="text-2xl font-black text-navy">Search medicines</h1>
+              </div>
+              <p className="text-sm font-semibold text-muted">{medicines.length} products found</p>
+            </div>
+            <div className="rounded-lg border border-border bg-white p-2 shadow-sm">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search medicine name, SKU, or generic name"
+                  className="h-12 w-full rounded-lg border border-transparent bg-surface-soft py-3 pl-12 pr-4 text-base font-semibold text-navy outline-none placeholder:text-muted focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
+                />
+              </label>
+            </div>
           </div>
         </div>
 

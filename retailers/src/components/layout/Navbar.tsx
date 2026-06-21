@@ -161,8 +161,8 @@ export function Navbar() {
       </header>
 
       {locationOpen ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-navy/40 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-soft">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-navy/40 px-4" onMouseDown={() => setLocationOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-soft" onMouseDown={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-black text-navy">Delivery Address</h2>
