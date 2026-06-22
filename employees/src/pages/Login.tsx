@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { clearAuth, saveAuth } from "../lib/auth";
-import { authService } from "../services/authService";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
@@ -11,6 +10,7 @@ export default function Login() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -18,19 +18,10 @@ export default function Login() {
         setIsLoading(true);
 
         try {
-            const auth = await authService.login({ email, password });
-
-            if (auth.user.role !== "EMPLOYEE") {
-                clearAuth();
-                await authService.logout().catch(() => undefined);
-                setError("Please use an employee account for this portal.");
-                return;
-            }
-
-            saveAuth(auth);
+            await login({ email, password });
             navigate("/dashboard", { replace: true });
-        } catch {
-            setError("Invalid email or password.");
+        } catch (authError) {
+            setError(authError instanceof Error && authError.message.startsWith("Please use") ? authError.message : "Invalid email or password.");
         } finally {
             setIsLoading(false);
         }

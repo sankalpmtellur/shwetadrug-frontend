@@ -36,18 +36,24 @@ export class ApiError extends Error {
   }
 }
 
-const tokenKey = "admin_access_token";
+const legacyAccessTokenKey = "admin_access_token";
 const csrfCookieName = "csrfToken";
+let accessToken: string | null = null;
+
+if (typeof window !== "undefined") {
+  localStorage.removeItem(legacyAccessTokenKey);
+}
 
 export const tokenStorage = {
   get() {
-    return localStorage.getItem(tokenKey);
+    return accessToken;
   },
   set(token: string) {
-    localStorage.setItem(tokenKey, token);
+    accessToken = token;
   },
   clear() {
-    localStorage.removeItem(tokenKey);
+    accessToken = null;
+    localStorage.removeItem(legacyAccessTokenKey);
   },
 };
 

@@ -51,22 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function restoreSession() {
-      const token = tokenStorage.get();
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
+        const refreshed = await authService.refreshToken();
+        tokenStorage.set(refreshed.accessToken);
         await loadAdminProfile();
       } catch {
-        try {
-          const refreshed = await authService.refreshToken();
-          tokenStorage.set(refreshed.accessToken);
-          await loadAdminProfile();
-        } catch {
-          clearSession();
-        }
+        clearSession();
       } finally {
         setIsLoading(false);
       }

@@ -1,34 +1,117 @@
-import { useEffect, useState } from "react";
-import { clearAuth, getUser, isAuthenticated, saveUser } from "../lib/auth";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { clearAuth, saveAuth, saveUser } from "../lib/auth";
 import { authService } from "../services/authService";
-import type { User } from "../types/auth";
+import type { AuthResponse, LoginPayload, User } from "../types/auth";
 
-export function useAuth() {
-  const [user, setUser] = useState<User | null>(() => getUser());
+type AuthContextValue = {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (payload: LoginPayload) => Promise<AuthResponse>;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+function isEmployee(user: User | null) {
+  return user?.role === "EMPLOYEE";
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const clearSession = useCallback(() => {
+    clearAuth();
+    setUser(null);
+  }, []);
+
+  const loadEmployeeProfile = useCallback(async () => {
+    const profile = await authService.getProfile();
+    if (!isEmployee(profile)) {
+      clearSession();
+      throw new Error("Please use an employee account for this portal.");
+    }
+
+    saveUser(profile);
+    setUser(profile);
+    return profile;
+  }, [clearSession]);
 
   useEffect(() => {
-    if (!isAuthenticated()) return;
-
-    let cancelled = false;
-
-    authService
-      .getProfile()
-      .then((profile) => {
-        if (profile.role !== "EMPLOYEE") {
-          clearAuth();
-          if (!cancelled) setUser(null);
+    async function restoreSession() {
+      try {
+        const refreshed = await authService.refreshToken();
+        if (!isEmployee(refreshed.user)) {
+          clearSession();
           return;
         }
 
-        saveUser(profile);
-        if (!cancelled) setUser(profile);
-      })
-      .catch(() => undefined);
+        saveAuth(refreshed);
+        await loadEmployeeProfile();
+      } catch {
+        clearSession();
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void restoreSession();
+  }, [clearSession, loadEmployeeProfile]);
 
-  return { user, isAuthenticated: isAuthenticated() };
+  const login = useCallback(
+    async (payload: LoginPayload) => {
+      setIsLoading(true);
+
+      try {
+        const auth = await authService.login(payload);
+        if (!isEmployee(auth.user)) {
+          clearSession();
+          await authService.logout().catch(() => undefined);
+          throw new Error("Please use an employee account for this portal.");
+        }
+
+        saveAuth(auth);
+        setUser(auth.user);
+        return auth;
+      } catch (error) {
+        clearSession();
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [clearSession],
+  );
+
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } finally {
+      clearSession();
+    }
+  }, [clearSession]);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      isAuthenticated: isEmployee(user),
+      isLoading,
+      login,
+      logout,
+    }),
+    [isLoading, login, logout, user],
+  );
+
+  return createElement(AuthContext.Provider, { value }, children);
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+
+  return context;
 }

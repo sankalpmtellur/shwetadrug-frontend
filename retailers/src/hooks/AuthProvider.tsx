@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { AUTH_CHANGED_EVENT, clearAuth, getAccessToken, getUser, saveUser } from "../lib/auth";
+import { AUTH_CHANGED_EVENT, clearAuth, getAccessToken, getUser, saveAuth, saveUser } from "../lib/auth";
 import { authService } from "../services/authService";
 import { profileService } from "../services/profileService";
 import type { RetailerProfile } from "../types";
@@ -24,30 +24,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const restoreSession = useCallback(async () => {
-    const cachedUser = getUser();
-
-    if (!getAccessToken() || !cachedUser) {
-      setUser(null);
-      setProfile(null);
-      setIsLoading(false);
-      return null;
-    }
-
-    if (cachedUser.role !== "RETAILER") {
-      clearAuth();
-      setUser(null);
-      setProfile(null);
-      setIsLoading(false);
-      return null;
-    }
-
     setIsLoading(true);
 
     try {
+      const refreshed = await authService.refreshToken();
+      if (refreshed.user.role !== "RETAILER" || !refreshed.user.retailerId) {
+        clearAuth(false);
+        setUser(null);
+        setProfile(null);
+        return null;
+      }
+
+      saveAuth(refreshed, false);
       const nextProfile = await profileService.getProfile();
 
       if (nextProfile.role !== "RETAILER" || !nextProfile.retailerId) {
-        clearAuth();
+        clearAuth(false);
         setUser(null);
         setProfile(null);
         return null;
@@ -59,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(nextProfile);
       return nextProfile;
     } catch {
-      clearAuth();
+      clearAuth(false);
       setUser(null);
       setProfile(null);
       return null;

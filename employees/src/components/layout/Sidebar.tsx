@@ -1,8 +1,6 @@
 import { Boxes, Headset, LayoutDashboard, LogOut, Menu, ShieldAlert, Truck, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "../common/Button";
-import { clearAuth } from "../../lib/auth";
-import { authService } from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
 
 const links = [
@@ -14,12 +12,11 @@ const links = [
 
 export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boolean) => void }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { logout, user } = useAuth();
 
   async function handleLogout() {
     setOpen(false);
-    await authService.logout().catch(() => undefined);
-    clearAuth();
+    await logout();
     navigate("/login", { replace: true });
   }
 

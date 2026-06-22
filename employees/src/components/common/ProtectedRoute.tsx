@@ -1,14 +1,23 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { clearAuth, getUserRole, isAuthenticated } from "../../lib/auth";
+import { useAuth } from "../../hooks/useAuth";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  if (!isAuthenticated()) {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#f6f8fc] px-4 text-center">
+        <p className="text-sm font-semibold text-muted">Restoring session...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (getUserRole() !== "EMPLOYEE") {
-    clearAuth();
+  if (user?.role !== "EMPLOYEE") {
     return <Navigate to="/login" replace />;
   }
 

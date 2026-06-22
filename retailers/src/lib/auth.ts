@@ -1,20 +1,25 @@
 import type { AuthResponse, User } from "../types/auth";
 
-const ACCESS_TOKEN_KEY = "sdd_retailer_access_token";
+const LEGACY_ACCESS_TOKEN_KEY = "sdd_retailer_access_token";
 const LEGACY_REFRESH_TOKEN_KEY = "sdd_retailer_refresh_token";
 const USER_KEY = "sdd_retailer_user";
+let accessToken: string | null = null;
 export const AUTH_CHANGED_EVENT = "sdd-retailer-auth-changed";
+
+if (typeof window !== "undefined") {
+  localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
+}
 
 function notifyAuthChanged() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 }
 
-export function saveAuth(auth: AuthResponse) {
-  localStorage.setItem(ACCESS_TOKEN_KEY, auth.accessToken);
+export function saveAuth(auth: AuthResponse, notify = true) {
+  accessToken = auth.accessToken;
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
   localStorage.setItem(USER_KEY, JSON.stringify(auth.user));
-  notifyAuthChanged();
+  if (notify) notifyAuthChanged();
 }
 
 export function saveUser(user: User) {
@@ -22,7 +27,7 @@ export function saveUser(user: User) {
 }
 
 export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return accessToken;
 }
 
 export function getUser(): User | null {
@@ -37,17 +42,14 @@ export function getUser(): User | null {
   }
 }
 
-export function clearAuth() {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
+export function clearAuth(notify = true) {
+  accessToken = null;
+  localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
-  notifyAuthChanged();
+  if (notify) notifyAuthChanged();
 }
 
 export function isAuthenticated() {
-  return Boolean(getAccessToken() && getUser());
-}
-
-export function getUserRole() {
-  return getUser()?.role ?? null;
+  return Boolean(accessToken);
 }
