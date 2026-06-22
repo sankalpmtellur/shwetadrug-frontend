@@ -1,5 +1,5 @@
-import { useState, type FormEvent, type ReactNode } from "react";
-import { Eye, EyeOff, LockKeyhole, PackageCheck, ShieldCheck, Truck } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { clearAuth, saveAuth } from "../lib/auth";
 import { authService } from "../services/authService";
@@ -39,16 +39,6 @@ export default function Login() {
     return (
         <main className="min-h-screen overflow-hidden bg-[#f6f8fc] px-4 py-8">
             <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_.95fr]">
-                <section className="hidden lg:block">
-                    <p className="text-xs font-black uppercase tracking-widest text-primary">Employee Portal</p>
-                    <h1 className="mt-4 max-w-xl text-5xl font-black leading-tight text-navy">Operations workspace for orders and stock control.</h1>
-                    <p className="mt-4 max-w-lg text-base font-semibold leading-7 text-muted">Review retailer orders, update inventory, and keep expiry-sensitive batches under control.</p>
-                    <div className="mt-8 grid max-w-xl gap-3">
-                        <Feature icon={<Truck />} title="Incoming Orders" />
-                        <Feature icon={<PackageCheck />} title="Stock Updates" />
-                        <Feature icon={<ShieldCheck />} title="Expiry Control" />
-                    </div>
-                </section>
 
                 <div className="w-full rounded-lg border border-border bg-white p-6 shadow-xl shadow-slate-200/70 md:p-8">
                     <div>
@@ -56,7 +46,7 @@ export default function Login() {
                             <LockKeyhole className="h-6 w-6" />
                         </div>
                         <p className="text-xs font-bold uppercase tracking-widest text-primary">Employee Portal</p>
-                        <h2 className="mt-2 text-3xl font-black text-navy">Welcome back</h2>
+                        <h2 className="mt-2 text-3xl font-black text-navy">Welcome </h2>
                         <p className="mt-2 text-sm text-muted">Sign in to manage daily warehouse operations.</p>
                     </div>
 
@@ -123,14 +113,5 @@ export default function Login() {
                 </div>
             </div>
         </main>
-    );
-}
-
-function Feature({ icon, title }: { icon: ReactNode; title: string }) {
-    return (
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-white/80 p-4 shadow-sm">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-surface-strong text-primary">{icon}</div>
-            <p className="font-black text-navy">{title}</p>
-        </div>
     );
 }

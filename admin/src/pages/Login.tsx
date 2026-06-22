@@ -1,5 +1,5 @@
-import { useState, type FormEvent, type ReactNode } from "react";
-import { BarChart3, Eye, EyeOff, LockKeyhole, ShieldCheck, UsersRound } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { Eye, EyeOff, LockKeyhole } from "lucide-react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
@@ -22,7 +22,6 @@ export default function Login() {
       await login(email.trim(), password);
       navigate("/dashboard", { replace: true });
     } catch {
-      // Error text is owned by auth state and displayed below the inputs.
     }
   }
 
@@ -33,16 +32,6 @@ export default function Login() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#f6f8fc] px-4 py-8">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1fr_.95fr]">
-        <section className="hidden lg:block">
-          <p className="text-xs font-black uppercase tracking-widest text-primary">Admin Portal</p>
-          <h1 className="mt-4 max-w-xl text-5xl font-black leading-tight text-navy">Command center for distributor operations.</h1>
-          <p className="mt-4 max-w-lg text-base font-semibold leading-7 text-muted">Monitor retailers, inventory, payments, deliveries, and operational exceptions from one focused workspace.</p>
-          <div className="mt-8 grid max-w-xl gap-3">
-            <Feature icon={<UsersRound />} title="Retailer Control" />
-            <Feature icon={<BarChart3 />} title="Operational Metrics" />
-            <Feature icon={<ShieldCheck />} title="Secure Admin Access" />
-          </div>
-        </section>
 
         <div className="w-full rounded-lg border border-border bg-white p-6 shadow-xl shadow-slate-200/70 md:p-8">
           <div>
@@ -50,7 +39,7 @@ export default function Login() {
               <LockKeyhole className="h-6 w-6" />
             </div>
             <p className="text-xs font-black uppercase tracking-widest text-primary">Admin Portal</p>
-            <h1 className="mt-2 text-3xl font-black text-navy">Welcome back</h1>
+            <h1 className="mt-2 text-3xl font-black text-navy">Welcome</h1>
             <p className="mt-2 text-sm text-muted">Sign in to manage Shweta Drug Distributors.</p>
           </div>
 
@@ -109,14 +98,5 @@ export default function Login() {
         </div>
       </div>
     </main>
-  );
-}
-
-function Feature({ icon, title }: { icon: ReactNode; title: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-white/80 p-4 shadow-sm">
-      <div className="grid h-10 w-10 place-items-center rounded-lg bg-surface-strong text-primary">{icon}</div>
-      <p className="font-black text-navy">{title}</p>
-    </div>
   );
 }
