@@ -29,44 +29,6 @@ export type Order = {
   items: Array<{ id: string; medicineName: string; quantity: number }>;
 };
 
-export type Payment = {
-  id: string;
-  method: string;
-  status: string;
-  amount: number;
-  transactionId: string | null;
-  paidAt: string | null;
-  order: {
-    orderNo: string;
-    retailer: { pharmacyName: string };
-    status: string;
-    placedAt: string;
-  };
-};
-
-export type Claim = {
-  id: string;
-  claimNo: string;
-  retailer: { pharmacyName: string };
-  order: { orderNo: string; totalAmount: number } | null;
-  reason: string;
-  status: string;
-  totalAmount: number;
-  createdAt: string;
-};
-
-export type Delivery = {
-  id: string;
-  orderNo: string;
-  retailer: { pharmacyName: string };
-  status: string;
-  placedAt: string;
-  dispatchedAt: string | null;
-  deliveredAt: string | null;
-  totalAmount: number;
-  items: Array<{ id: string; medicineName: string; quantity: number }>;
-};
-
 async function getList<T>(path: string): Promise<{ items: T[]; meta: ListMeta }> {
   const result = await apiResult<T[]>(api.get(path, { params: { limit: 100 } }));
   return {
@@ -87,14 +49,5 @@ export const operationsService = {
   },
   updateOrderStatus(id: string, status: string) {
     return apiResult<Order>(api.patch(`/orders/${id}/status`, { status }));
-  },
-  getPayments() {
-    return getList<Payment>("/payments");
-  },
-  getClaims() {
-    return getList<Claim>("/claims");
-  },
-  getDeliveries() {
-    return getList<Delivery>("/deliveries");
   },
 };

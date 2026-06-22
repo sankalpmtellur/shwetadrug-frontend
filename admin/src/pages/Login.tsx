@@ -22,6 +22,7 @@ export default function Login() {
       await login(email.trim(), password);
       navigate("/dashboard", { replace: true });
     } catch {
+      return;
     }
   }
 

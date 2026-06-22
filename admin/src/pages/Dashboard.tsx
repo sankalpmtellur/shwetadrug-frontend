@@ -42,7 +42,7 @@ function getKpis(dashboard: AdminDashboard | null): Kpi[] {
     {
       label: "Total Revenue",
       value: formatCurrency(dashboard?.totalRevenue),
-      hint: hasValue(dashboard?.pendingClaims) ? `${formatCount(dashboard?.pendingClaims)} pending claims` : "Pending claims unavailable",
+      hint: "Confirmed order value",
       tone: "blue",
     },
     {

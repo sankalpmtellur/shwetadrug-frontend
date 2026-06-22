@@ -8,7 +8,6 @@ export type AdminDashboard = {
   pendingOrders?: number | null;
   deliveredOrders?: number | null;
   totalRevenue?: number | null;
-  pendingClaims?: number | null;
 };
 
 export const dashboardService = {

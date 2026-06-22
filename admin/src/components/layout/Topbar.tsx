@@ -16,15 +16,6 @@ const pageCopy: Record<string, { title: string }> = {
   "/orders": {
     title: "Orders",
   },
-  "/payments": {
-    title: "Payments",
-  },
-  "/claims": {
-    title: "Claims",
-  },
-  "/deliveries": {
-    title: "Deliveries",
-  },
 };
 
 export function Topbar() {
