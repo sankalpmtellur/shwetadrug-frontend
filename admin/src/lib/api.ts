@@ -37,6 +37,7 @@ export class ApiError extends Error {
 }
 
 const tokenKey = "admin_access_token";
+const csrfCookieName = "csrfToken";
 
 export const tokenStorage = {
   get() {
@@ -58,10 +59,33 @@ const api = axios.create({
   },
 });
 
+function readCookie(name: string) {
+  if (typeof document === "undefined") return null;
+
+  const cookie = document.cookie
+    .split("; ")
+    .find((item) => item.startsWith(`${name}=`));
+
+  return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null;
+}
+
+function isCsrfProtectedUrl(url?: string) {
+  return Boolean(url?.includes("/auth/refresh-token") || url?.includes("/auth/logout"));
+}
+
+function getCsrfHeaders() {
+  const token = readCookie(csrfCookieName);
+  return token ? { "X-CSRF-Token": token } : {};
+}
+
 api.interceptors.request.use((config) => {
   const token = tokenStorage.get();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  const csrfToken = readCookie(csrfCookieName);
+  if (csrfToken && isCsrfProtectedUrl(config.url)) {
+    (config.headers as Record<string, string>)["X-CSRF-Token"] = csrfToken;
   }
   return config;
 });
@@ -86,7 +110,7 @@ api.interceptors.response.use(
       const response = await axios.post<ApiResponse<{ accessToken: string; user: { role: string } }>>(
         `${api.defaults.baseURL}/auth/refresh-token`,
         {},
-        { withCredentials: true },
+        { withCredentials: true, headers: getCsrfHeaders() },
       );
 
       if (response.data.data.user.role !== "ADMIN") {

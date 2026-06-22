@@ -6,15 +6,40 @@ type RetryableRequest = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
 
+const csrfCookieName = "csrfToken";
+
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api/v1",
   withCredentials: true,
 });
 
+function readCookie(name: string) {
+  if (typeof document === "undefined") return null;
+
+  const cookie = document.cookie
+    .split("; ")
+    .find((item) => item.startsWith(`${name}=`));
+
+  return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null;
+}
+
+function isCsrfProtectedUrl(url?: string) {
+  return Boolean(url?.includes("/auth/refresh-token") || url?.includes("/auth/logout"));
+}
+
+function getCsrfHeaders() {
+  const token = readCookie(csrfCookieName);
+  return token ? { "X-CSRF-Token": token } : {};
+}
+
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  const csrfToken = readCookie(csrfCookieName);
+  if (csrfToken && isCsrfProtectedUrl(config.url)) {
+    (config.headers as Record<string, string>)["X-CSRF-Token"] = csrfToken;
   }
   return config;
 });
@@ -34,7 +59,7 @@ api.interceptors.response.use(
       const response = await axios.post<ApiResponse<AuthResponse>>(
         `${api.defaults.baseURL}/auth/refresh-token`,
         {},
-        { withCredentials: true },
+        { withCredentials: true, headers: getCsrfHeaders() },
       );
 
       if (response.data.data.user.role !== "EMPLOYEE") {
