@@ -24,6 +24,8 @@ type RetryableRequest = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
 
+type RefreshPayload = { accessToken: string; user: { role: string } };
+
 export class ApiError extends Error {
   status?: number;
   errors?: unknown;
@@ -39,6 +41,7 @@ export class ApiError extends Error {
 const legacyAccessTokenKey = "admin_access_token";
 const csrfCookieName = "csrfToken";
 let accessToken: string | null = null;
+let refreshRequest: Promise<{ data: ApiResponse<RefreshPayload> }> | null = null;
 
 if (typeof window !== "undefined") {
   localStorage.removeItem(legacyAccessTokenKey);
@@ -84,6 +87,20 @@ function getCsrfHeaders() {
   return token ? { "X-CSRF-Token": token } : {};
 }
 
+function refreshSession() {
+  refreshRequest ??= axios
+    .post<ApiResponse<RefreshPayload>>(
+      `${api.defaults.baseURL}/auth/refresh-token`,
+      {},
+      { withCredentials: true, headers: getCsrfHeaders() },
+    )
+    .finally(() => {
+      refreshRequest = null;
+    });
+
+  return refreshRequest;
+}
+
 api.interceptors.request.use((config) => {
   const token = tokenStorage.get();
   if (token) {
@@ -113,11 +130,7 @@ api.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      const response = await axios.post<ApiResponse<{ accessToken: string; user: { role: string } }>>(
-        `${api.defaults.baseURL}/auth/refresh-token`,
-        {},
-        { withCredentials: true, headers: getCsrfHeaders() },
-      );
+      const response = await refreshSession();
 
       if (response.data.data.user.role !== "ADMIN") {
         tokenStorage.clear();

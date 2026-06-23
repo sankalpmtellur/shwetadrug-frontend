@@ -7,6 +7,7 @@ type RetryableRequest = InternalAxiosRequestConfig & {
 };
 
 const csrfCookieName = "csrfToken";
+let refreshRequest: Promise<{ data: ApiResponse<AuthResponse> }> | null = null;
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api/v1",
@@ -30,6 +31,20 @@ function isCsrfProtectedUrl(url?: string) {
 function getCsrfHeaders() {
   const token = readCookie(csrfCookieName);
   return token ? { "X-CSRF-Token": token } : {};
+}
+
+function refreshSession() {
+  refreshRequest ??= axios
+    .post<ApiResponse<AuthResponse>>(
+      `${api.defaults.baseURL}/auth/refresh-token`,
+      {},
+      { withCredentials: true, headers: getCsrfHeaders() },
+    )
+    .finally(() => {
+      refreshRequest = null;
+    });
+
+  return refreshRequest;
 }
 
 api.interceptors.request.use((config) => {
@@ -61,11 +76,7 @@ api.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      const response = await axios.post<ApiResponse<AuthResponse>>(
-        `${api.defaults.baseURL}/auth/refresh-token`,
-        {},
-        { withCredentials: true, headers: getCsrfHeaders() },
-      );
+      const response = await refreshSession();
 
       if (response.data.data.user.role !== "EMPLOYEE") {
         clearAuth();

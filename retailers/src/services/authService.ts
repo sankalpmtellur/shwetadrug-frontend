@@ -8,6 +8,8 @@ import type {
   RetailerSignupPayload,
 } from "../types/auth";
 
+let refreshPromise: Promise<AuthResponse> | null = null;
+
 export const authService = {
   async login(payload: LoginPayload) {
     const response = await api.post<ApiResponse<AuthResponse>>("/auth/login", payload);
@@ -19,8 +21,10 @@ export const authService = {
   },
 
   async refreshToken() {
-    const response = await api.post<ApiResponse<AuthResponse>>("/auth/refresh-token");
-    return response.data.data;
+    refreshPromise ??= api.post<ApiResponse<AuthResponse>>("/auth/refresh-token", {}).then((response) => response.data.data).finally(() => {
+      refreshPromise = null;
+    });
+    return refreshPromise;
   },
 
   async retailerSignup(payload: RetailerSignupPayload) {

@@ -24,6 +24,8 @@ type LoginResponse = {
 
 type RefreshResponse = LoginResponse;
 
+let refreshPromise: Promise<RefreshResponse> | null = null;
+
 export const authService = {
   login(email: string, password: string) {
     return apiRequest<LoginResponse>(api.post("/auth/login", { email, password }));
@@ -34,7 +36,10 @@ export const authService = {
   },
 
   refreshToken() {
-    return apiRequest<RefreshResponse>(api.post("/auth/refresh-token", {}));
+    refreshPromise ??= apiRequest<RefreshResponse>(api.post("/auth/refresh-token", {})).finally(() => {
+      refreshPromise = null;
+    });
+    return refreshPromise;
   },
 
   getProfile() {
