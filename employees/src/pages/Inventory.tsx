@@ -1,10 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { PackagePlus, RefreshCcw } from "lucide-react";
-import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Cell, Table } from "../components/common/Table";
-import { getApiErrorMessage, inventoryService, type InventoryLot, type InventoryStatus } from "../services/inventoryService";
+import { getApiErrorMessage, inventoryService, type InventoryLot } from "../services/inventoryService";
 
 const emptyForm = {
   quantity: "",
@@ -26,21 +25,7 @@ const emptyAddForm = {
   gstPercent: "12",
 };
 
-const statusLabels: Record<InventoryStatus, string> = {
-  HEALTHY: "Healthy",
-  LOW: "Low",
-  REORDER: "Reorder",
-  OUT_OF_STOCK: "Out of Stock",
-  EXPIRED: "Expired",
-};
-
-const statusTones: Record<InventoryStatus, "green" | "orange" | "blue" | "red"> = {
-  HEALTHY: "green",
-  LOW: "orange",
-  REORDER: "red",
-  OUT_OF_STOCK: "red",
-  EXPIRED: "red",
-};
+const pageSize = 10;
 
 export default function Inventory() {
   const [items, setItems] = useState<InventoryLot[]>([]);
@@ -53,8 +38,12 @@ export default function Inventory() {
   const [isSaving, setIsSaving] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
 
   const selectedItem = items.find((item) => item.id === selectedItemId) ?? null;
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   async function loadInventory() {
     setIsLoading(true);
@@ -63,6 +52,7 @@ export default function Inventory() {
     try {
       const data = await inventoryService.getInventory();
       setItems(data);
+      setPage(1);
     } catch (loadError) {
       setError(getApiErrorMessage(loadError));
     } finally {
@@ -320,8 +310,8 @@ export default function Inventory() {
           ) : null}
 
           {!isLoading && !error ? (
-            <Table headers={["Medicine", "SKU", "Batch", "Qty", "Price", "Expiry", "Status", "Action"]}>
-              {items.map((item) => (
+            <Table headers={["Medicine", "SKU", "Batch", "Qty", "Price", "Expiry", "Action"]}>
+              {pageItems.map((item) => (
                 <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
                   <Cell strong>{item.medicine.name}</Cell>
                   <Cell>{item.medicine.sku}</Cell>
@@ -329,9 +319,6 @@ export default function Inventory() {
                   <Cell>{item.quantityOnHand}</Cell>
                   <Cell>{formatCurrency(item.medicine.sellingPrice)}</Cell>
                   <Cell>{formatDate(item.expiryDate)}</Cell>
-                  <Cell>
-                    <Badge tone={statusTones[item.status]}>{statusLabels[item.status]}</Badge>
-                  </Cell>
                   <Cell>
                     <Button className="h-9 px-3" onClick={() => selectItem(item)} variant={selectedItemId === item.id ? "primary" : "secondary"}>
                       {selectedItemId === item.id ? "Selected" : "Edit"}
@@ -342,10 +329,31 @@ export default function Inventory() {
             </Table>
           ) : null}
           {!isLoading && !error && items.length === 0 ? <p className="py-8 text-center text-sm text-muted">No inventory lots found.</p> : null}
+          {!isLoading && !error && items.length > 0 ? (
+            <Pagination page={currentPage} totalPages={totalPages} totalItems={items.length} onPageChange={setPage} />
+          ) : null}
         </Card>
 
       </div>
     </section>
+  );
+}
+
+function Pagination({ page, totalPages, totalItems, onPageChange }: { page: number; totalPages: number; totalItems: number; onPageChange: (page: number) => void }) {
+  return (
+    <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm font-semibold text-muted">
+        {totalItems} inventory lots · Page {page} of {totalPages}
+      </p>
+      <div className="flex gap-2">
+        <Button type="button" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          Previous
+        </Button>
+        <Button type="button" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+          Next
+        </Button>
+      </div>
+    </div>
   );
 }
 

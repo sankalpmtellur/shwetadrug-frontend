@@ -10,16 +10,17 @@ import type { ListMeta } from "../lib/api";
 import { formatCount, formatCurrency, formatDate } from "../utils/formatters";
 
 export default function Orders() {
-  const [items, setItems] = useState<Order[]>([]);
+const [items, setItems] = useState<Order[]>([]);
   const [meta, setMeta] = useState<ListMeta>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
-  const loadOrders = useCallback(async () => {
+  const loadOrders = useCallback(async (nextPage = page) => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await operationsService.getOrders();
+      const result = await operationsService.getOrders(nextPage, 10);
       setItems(result.items);
       setMeta(result.meta);
     } catch (orderError) {
@@ -27,15 +28,15 @@ export default function Orders() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      void loadOrders();
+      void loadOrders(page);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [loadOrders]);
+  }, [loadOrders, page]);
 
   const revenue = useMemo(() => items.reduce((sum, item) => sum + item.totalAmount, 0), [items]);
   const averageOrderValue = items.length ? revenue / items.length : 0;
@@ -54,7 +55,7 @@ export default function Orders() {
             <h2 className="text-lg font-black text-navy">Orders</h2>
             <p className="text-sm text-muted">Read-only order value and retailer demand from backend orders.</p>
           </div>
-          {error ? <Button onClick={() => void loadOrders()}>Retry</Button> : null}
+          {error ? <Button onClick={() => void loadOrders(page)}>Retry</Button> : null}
         </div>
 
         {isLoading ? <p className="text-sm font-bold text-muted">Loading orders...</p> : null}
@@ -62,7 +63,7 @@ export default function Orders() {
         {!isLoading && !error && items.length === 0 ? <p className="text-sm font-bold text-muted">No orders found.</p> : null}
 
         {!isLoading && !error && items.length > 0 ? (
-          <Table headers={["Order", "Retailer", "Items", "Placed", "Total", "Priority"]}>
+          <Table headers={["Order", "Retailer", "Items", "Placed", "Total"]}>
             {items.map((item) => (
               <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
                 <Cell strong>{item.orderNo}</Cell>
@@ -70,7 +71,6 @@ export default function Orders() {
                 <Cell>{formatCount(item.items.length)}</Cell>
                 <Cell>{formatDate(item.placedAt)}</Cell>
                 <Cell>{formatCurrency(item.totalAmount)}</Cell>
-                <Cell>{item.priority.replaceAll("_", " ")}</Cell>
               </tr>
             ))}
           </Table>
@@ -80,7 +80,33 @@ export default function Orders() {
             Average order value: {formatCurrency(averageOrderValue)}
           </p>
         ) : null}
+        {!isLoading && !error && items.length > 0 ? (
+          <Pagination
+            page={meta.page ?? page}
+            totalPages={meta.totalPages ?? 1}
+            totalItems={meta.total ?? items.length}
+            onPageChange={setPage}
+          />
+        ) : null}
       </Card>
     </section>
+  );
+}
+
+function Pagination({ page, totalPages, totalItems, onPageChange }: { page: number; totalPages: number; totalItems: number; onPageChange: (page: number) => void }) {
+  return (
+    <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm font-semibold text-muted">
+        {formatCount(totalItems)} orders · Page {page} of {totalPages}
+      </p>
+      <div className="flex gap-2">
+        <Button type="button" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          Previous
+        </Button>
+        <Button type="button" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+          Next
+        </Button>
+      </div>
+    </div>
   );
 }

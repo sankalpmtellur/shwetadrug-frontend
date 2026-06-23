@@ -10,14 +10,14 @@ const pageCopy: Record<string, { title: string }> = {
   "/inventory": {
     title: "Inventory",
   },
+  "/expiry": {
+    title: "Expiry Management",
+  },
   "/retailers": {
     title: "Retailers",
   },
   "/orders": {
     title: "Orders",
-  },
-  "/audit-logs": {
-    title: "Audit Logs",
   },
 };
 

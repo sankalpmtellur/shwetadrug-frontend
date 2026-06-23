@@ -10,6 +10,7 @@ import type { ListMeta } from "../services/inventoryService";
 
 const retailerStatuses = ["ACTIVE", "REVIEW", "REJECTED", "SUSPENDED"];
 const pageSize = 10;
+const actionStatuses = new Set(["PENDING_VERIFICATION", "REVIEW"]);
 
 function formatCount(value: number | null | undefined) {
   return typeof value === "number" ? new Intl.NumberFormat("en-IN").format(value) : "-";
@@ -29,6 +30,15 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function sortRetailersForAction(rows: RetailerAccount[]) {
+  return [...rows].sort((a, b) => {
+    const aNeedsAction = actionStatuses.has(a.status) ? 0 : 1;
+    const bNeedsAction = actionStatuses.has(b.status) ? 0 : 1;
+    if (aNeedsAction !== bNeedsAction) return aNeedsAction - bNeedsAction;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+}
+
 export default function Retailers() {
   const [retailers, setRetailers] = useState<RetailerAccount[]>([]);
   const [meta, setMeta] = useState<ListMeta>({});
@@ -45,7 +55,7 @@ export default function Retailers() {
 
     try {
       const result = await retailerService.getRetailers();
-      setRetailers(result.items);
+      setRetailers(sortRetailersForAction(result.items));
       setMeta(result.meta);
     } catch (retailerError) {
       setError(retailerError instanceof Error ? retailerError.message : "Unable to load retailers");
@@ -72,7 +82,7 @@ export default function Retailers() {
 
     try {
       const result = await retailerService.updateRetailerStatus(id, status, temporaryPassword);
-      setRetailers((current) => current.map((row) => (row.id === id ? result.data : row)));
+      setRetailers((current) => sortRetailersForAction(current.map((row) => (row.id === id ? result.data : row))));
       setTemporaryPasswords((current) => {
         const next = { ...current };
         delete next[id];

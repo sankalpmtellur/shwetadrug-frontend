@@ -1,8 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
 import AdminLayout from "../layouts/AdminLayout";
-import AuditLogs from "../pages/AuditLogs";
 import Dashboard from "../pages/Dashboard";
+import Expiry from "../pages/Expiry";
 import Inventory from "../pages/Inventory";
 import Login from "../pages/Login";
 import Medicines from "../pages/Medicines";
@@ -24,9 +24,9 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/medicines" element={<Medicines />} />
         <Route path="/inventory" element={<Inventory />} />
+        <Route path="/expiry" element={<Expiry />} />
         <Route path="/retailers" element={<Retailers />} />
         <Route path="/orders" element={<Orders />} />
-        <Route path="/audit-logs" element={<AuditLogs />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

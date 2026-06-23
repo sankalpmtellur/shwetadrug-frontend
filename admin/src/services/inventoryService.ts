@@ -39,6 +39,14 @@ export const inventoryService = {
     };
   },
 
+  async getExpiringInventory(days = 60) {
+    const result = await apiResult<InventoryItem[]>(api.get("/inventory/alerts/expiring", { params: { days, limit: 100 } }));
+    return {
+      items: result.data,
+      meta: readListMeta(result.meta),
+    };
+  },
+
   async updateInventory(id: string, data: { quantity?: number; status?: string }) {
     const result = await apiResult<InventoryItem>(api.patch(`/inventory/${id}`, data));
     return result.data;

@@ -29,8 +29,8 @@ export type Order = {
   items: Array<{ id: string; medicineName: string; quantity: number }>;
 };
 
-async function getList<T>(path: string): Promise<{ items: T[]; meta: ListMeta }> {
-  const result = await apiResult<T[]>(api.get(path, { params: { limit: 100 } }));
+async function getList<T>(path: string, params: { page?: number; limit?: number } = {}): Promise<{ items: T[]; meta: ListMeta }> {
+  const result = await apiResult<T[]>(api.get(path, { params: { limit: 100, ...params } }));
   return {
     items: result.data,
     meta: readListMeta(result.meta),
@@ -44,7 +44,7 @@ export const operationsService = {
   deleteMedicine(id: string) {
     return apiResult<Medicine>(api.delete(`/medicines/${id}`));
   },
-  getOrders() {
-    return getList<Order>("/orders");
+  getOrders(page = 1, limit = 10) {
+    return getList<Order>("/orders", { page, limit });
   },
 };

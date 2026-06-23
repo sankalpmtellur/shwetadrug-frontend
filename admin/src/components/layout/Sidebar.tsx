@@ -1,20 +1,54 @@
-import { BarChart3, Boxes, Building2, LogOut, Menu, Pill, ScrollText, ShoppingBag, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BarChart3, Boxes, Building2, LogOut, Menu, Pill, ShieldAlert, ShoppingBag, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { inventoryService } from "../../services/inventoryService";
+import { retailerService } from "../../services/retailerService";
 import { Button } from "../common/Button";
 
 const links = [
   { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { to: "/medicines", label: "Medicines", icon: Pill },
   { to: "/inventory", label: "Inventory", icon: Boxes },
-  { to: "/retailers", label: "Retailers", icon: Building2 },
+  { to: "/expiry", label: "Expiry Management", icon: ShieldAlert, badge: "expiry" },
+  { to: "/retailers", label: "Retailers", icon: Building2, badge: "retailers" },
   { to: "/orders", label: "Orders", icon: ShoppingBag },
-  { to: "/audit-logs", label: "Audit Logs", icon: ScrollText },
 ];
 
 export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boolean) => void }) {
   const navigate = useNavigate();
   const { isLoading, logout } = useAuth();
+  const [badges, setBadges] = useState({ retailers: 0, expiry: 0 });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadBadges() {
+      try {
+        const [retailerResult, expiryResult] = await Promise.all([
+          retailerService.getRetailers(),
+          inventoryService.getExpiringInventory(60),
+        ]);
+
+        if (!isMounted) return;
+
+        setBadges({
+          retailers: retailerResult.items.filter((row) => needsRetailerAction(row.status)).length,
+          expiry: expiryResult.items.length,
+        });
+      } catch {
+        if (isMounted) {
+          setBadges({ retailers: 0, expiry: 0 });
+        }
+      }
+    }
+
+    void loadBadges();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleLogout() {
     setOpen(false);
@@ -35,7 +69,9 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boo
       </div>
 
       <nav className="space-y-2">
-        {links.map(({ to, label, icon: Icon }) => (
+        {links.map(({ to, label, icon: Icon, badge }) => {
+          const badgeValue = badge ? badges[badge as keyof typeof badges] : 0;
+          return (
           <NavLink
             key={to}
             to={to}
@@ -47,9 +83,13 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boo
             }
           >
             <Icon className="h-5 w-5" />
-            {label}
+            <span className="min-w-0 flex-1 truncate">{label}</span>
+            {badgeValue > 0 ? (
+              <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-black text-white">{badgeValue}</span>
+            ) : null}
           </NavLink>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="mt-auto border-t border-border pt-4">
@@ -79,4 +119,8 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boo
       ) : null}
     </>
   );
+}
+
+function needsRetailerAction(status: string) {
+  return status === "PENDING_VERIFICATION" || status === "REVIEW";
 }

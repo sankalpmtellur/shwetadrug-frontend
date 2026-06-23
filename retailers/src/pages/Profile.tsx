@@ -2,18 +2,17 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Building2, Edit3, Eye, EyeOff, LockKeyhole, Mail, MapPin, MonitorSmartphone, Save, UserRound, X } from "lucide-react";
+import { ArrowLeft, Building2, Edit3, Eye, EyeOff, LockKeyhole, Mail, MapPin, Save, UserRound, X } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Input } from "../components/common/Input";
 import { DashboardLayout } from "../layouts/DashboardLayout";
-import { formatDefaultAddress, profileService, type SessionDevice } from "../services/profileService";
+import { formatDefaultAddress, profileService } from "../services/profileService";
 import type { DefaultAddress, RetailerProfile } from "../types";
 
 export default function Profile() {
   const [profile, setProfile] = useState<RetailerProfile | null>(null);
   const [defaultAddress, setDefaultAddress] = useState<DefaultAddress | null>(null);
-  const [sessions, setSessions] = useState<SessionDevice[]>([]);
   const [profileForm, setProfileForm] = useState({ name: "", phone: "" });
   const [addressForm, setAddressForm] = useState({
     address: "",
@@ -24,7 +23,6 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -43,11 +41,10 @@ export default function Profile() {
     setErrorMessage("");
 
     try {
-      const [nextProfile, nextSessions] = await Promise.all([profileService.getProfile(), profileService.getSessions()]);
+      const nextProfile = await profileService.getProfile();
       const nextAddress = nextProfile.retailer?.defaultAddress ?? null;
 
       setProfile(nextProfile);
-      setSessions(nextSessions);
       setProfileForm({
         name: nextProfile.name,
         phone: nextProfile.phone ?? "",
@@ -63,20 +60,6 @@ export default function Profile() {
       setErrorMessage("Could not load profile. Please try again.");
     } finally {
       setIsLoading(false);
-    }
-  }
-
-  async function revokeSession(sessionId: string) {
-    setRevokingSessionId(sessionId);
-
-    try {
-      await profileService.revokeSession(sessionId);
-      setSessions((current) => current.filter((session) => session.id !== sessionId));
-      toast.success("Session revoked");
-    } catch {
-      toast.error("Could not revoke session");
-    } finally {
-      setRevokingSessionId(null);
     }
   }
 
@@ -335,69 +318,11 @@ export default function Profile() {
                 </Button>
               </div>
             </Card>
-
-            <Card className="p-5 sm:p-6">
-              <div className="flex items-start gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-strong text-primary">
-                  <MonitorSmartphone className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-navy">Active Sessions</h2>
-                  <p className="mt-1 text-sm font-semibold text-muted">Review signed-in devices and revoke sessions you do not recognize.</p>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-3">
-                {sessions.length === 0 ? (
-                  <p className="rounded-lg bg-surface-soft p-4 text-sm font-semibold text-muted">No active sessions found.</p>
-                ) : (
-                  sessions.map((session) => (
-                    <div key={session.id} className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate text-sm font-black text-navy">{formatDevice(session.userAgent)}</p>
-                          {session.isCurrent ? <span className="rounded-full bg-surface-strong px-2 py-1 text-xs font-black uppercase tracking-wide text-primary">Current</span> : null}
-                        </div>
-                        <p className="mt-1 text-xs font-semibold text-muted">
-                          {session.ipAddress ?? "Unknown IP"} · Started {formatSessionDate(session.createdAt)}
-                        </p>
-                        <p className="mt-1 text-xs font-semibold text-muted">
-                          Last used {session.lastUsedAt ? formatSessionDate(session.lastUsedAt) : "not yet"} · Expires {formatSessionDate(session.expiresAt)}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        disabled={session.isCurrent || revokingSessionId === session.id}
-                        onClick={() => void revokeSession(session.id)}
-                      >
-                        {revokingSessionId === session.id ? "Revoking..." : session.isCurrent ? "This device" : "Revoke"}
-                      </Button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </Card>
           </>
         ) : null}
       </div>
     </DashboardLayout>
   );
-}
-
-function formatDevice(userAgent: string | null) {
-  if (!userAgent) return "Unknown device";
-  return userAgent.length > 90 ? `${userAgent.slice(0, 87)}...` : userAgent;
-}
-
-function formatSessionDate(value: string) {
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 }
 
 function Info({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {

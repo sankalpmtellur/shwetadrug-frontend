@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { RefreshCcw } from "lucide-react";
-import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Cell, Table } from "../components/common/Table";
@@ -75,10 +74,9 @@ export default function Expiry() {
         ) : null}
 
         {!isLoading && !error ? (
-          <Table headers={["Medicine", "SKU", "Batch", "Expiry", "Days Left", "Quantity", "Priority", "Action"]}>
+          <Table headers={["Medicine", "SKU", "Batch", "Expiry", "Days Left", "Quantity"]}>
             {alerts.map((item) => {
               const daysRemaining = getDaysRemaining(item.expiryDate);
-              const severity = daysRemaining <= 15 ? "Critical" : "Review";
 
               return (
                 <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
@@ -88,10 +86,6 @@ export default function Expiry() {
                   <Cell>{formatDate(item.expiryDate)}</Cell>
                   <Cell>{formatDaysRemaining(daysRemaining)}</Cell>
                   <Cell>{item.availableQuantity}</Cell>
-                  <Cell>
-                    <Badge tone={severity === "Critical" ? "red" : "orange"}>{severity}</Badge>
-                  </Cell>
-                  <Cell>{getActionText(daysRemaining)}</Cell>
                 </tr>
               );
             })}
@@ -116,12 +110,6 @@ function formatDaysRemaining(days: number) {
   if (days === 0) return "Today";
   if (days === 1) return "1 day";
   return `${days} days`;
-}
-
-function getActionText(days: number) {
-  if (days < 0) return "Do not dispatch; expired batch needs review.";
-  if (days <= 15) return "Hold dispatch and review batch urgently.";
-  return "Review before dispatch.";
 }
 
 function formatDate(value: string) {

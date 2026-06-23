@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { Eye, EyeOff, LockKeyhole } from "lucide-react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { Boxes, ClipboardCheck, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
@@ -30,6 +30,18 @@ export default function Login() {
     return (
         <main className="min-h-screen overflow-hidden bg-[#f6f8fc] px-4 py-8">
             <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_.95fr]">
+                <section className="hidden rounded-lg border border-blue-100 bg-white p-8 shadow-xl shadow-slate-200/70 lg:block">
+                    <div className="rounded-lg bg-primary px-6 py-7 text-white shadow-lg shadow-primary/20">
+                        <p className="text-xs font-black uppercase tracking-widest text-white/75">Warehouse Desk</p>
+                        <h1 className="mt-3 text-4xl font-black leading-tight">Daily operations, kept focused.</h1>
+                        <p className="mt-4 text-sm font-semibold leading-6 text-white/80">Review orders, update stock, and monitor expiry batches from one employee workspace.</p>
+                    </div>
+                    <div className="mt-5 grid gap-3">
+                        <LoginFeature icon={<ClipboardCheck className="h-5 w-5" />} label="Order review" />
+                        <LoginFeature icon={<Boxes className="h-5 w-5" />} label="Inventory updates" />
+                        <LoginFeature icon={<ShieldCheck className="h-5 w-5" />} label="Expiry checks" />
+                    </div>
+                </section>
 
                 <div className="w-full rounded-lg border border-border bg-white p-6 shadow-xl shadow-slate-200/70 md:p-8">
                     <div>
@@ -104,5 +116,14 @@ export default function Login() {
                 </div>
             </div>
         </main>
+    );
+}
+
+function LoginFeature({ icon, label }: { icon: ReactNode; label: string }) {
+    return (
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-soft p-4">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-white text-primary">{icon}</div>
+            <p className="text-sm font-black text-navy">{label}</p>
+        </div>
     );
 }
