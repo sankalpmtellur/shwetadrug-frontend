@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "../components/common/ProtectedRoute";
 import AdminLayout from "../layouts/AdminLayout";
+import AuditLogs from "../pages/AuditLogs";
 import Dashboard from "../pages/Dashboard";
 import Inventory from "../pages/Inventory";
 import Login from "../pages/Login";
@@ -25,6 +26,7 @@ export function AppRoutes() {
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/retailers" element={<Retailers />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/audit-logs" element={<AuditLogs />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

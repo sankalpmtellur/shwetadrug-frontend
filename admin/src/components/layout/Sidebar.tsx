@@ -1,4 +1,4 @@
-import { BarChart3, Boxes, Building2, LogOut, Menu, Pill, ShoppingBag, X } from "lucide-react";
+import { BarChart3, Boxes, Building2, LogOut, Menu, Pill, ScrollText, ShoppingBag, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../common/Button";
@@ -9,6 +9,7 @@ const links = [
   { to: "/inventory", label: "Inventory", icon: Boxes },
   { to: "/retailers", label: "Retailers", icon: Building2 },
   { to: "/orders", label: "Orders", icon: ShoppingBag },
+  { to: "/audit-logs", label: "Audit Logs", icon: ScrollText },
 ];
 
 export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boolean) => void }) {

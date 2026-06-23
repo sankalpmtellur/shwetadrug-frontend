@@ -16,6 +16,9 @@ const pageCopy: Record<string, { title: string }> = {
   "/orders": {
     title: "Orders",
   },
+  "/audit-logs": {
+    title: "Audit Logs",
+  },
 };
 
 export function Topbar() {
