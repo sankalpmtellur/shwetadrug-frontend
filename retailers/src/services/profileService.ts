@@ -2,6 +2,17 @@ import { api } from "../lib/api";
 import type { ApiResponse } from "../types/auth";
 import type { DefaultAddress, RetailerProfile } from "../types";
 
+export type SessionDevice = {
+  id: string;
+  userAgent: string | null;
+  ipAddress: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string;
+  revokedAt: string | null;
+  isCurrent: boolean;
+};
+
 export function formatDefaultAddress(address: DefaultAddress | null) {
   if (!address) return "Update your delivery address in profile.";
 
@@ -28,6 +39,16 @@ export const profileService = {
 
   async changePassword(payload: { currentPassword: string; newPassword: string; confirmNewPassword: string }) {
     const response = await api.patch<ApiResponse<{ id: string; email: string }>>("/users/profile/password", payload);
+    return response.data.data;
+  },
+
+  async getSessions() {
+    const response = await api.get<ApiResponse<SessionDevice[]>>("/users/sessions");
+    return response.data.data;
+  },
+
+  async revokeSession(sessionId: string) {
+    const response = await api.delete<ApiResponse<{ id: string; revoked: boolean }>>(`/users/sessions/${sessionId}`);
     return response.data.data;
   },
 };
