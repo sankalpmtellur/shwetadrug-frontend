@@ -10,18 +10,7 @@ import { useCart } from "../hooks/useCart";
 import { DashboardLayout } from "../layouts/DashboardLayout";
 import { currency } from "../utils/formatters";
 import { orderService } from "../services/orderService";
-import type { BackendOrderStatus, CartItem, OrderInvoice, RetailerOrder } from "../types";
-
-const statusLabels: Record<BackendOrderStatus, "Processing" | "Dispatched" | "Delivered" | "Cancelled" | "Returned"> = {
-  PENDING: "Processing",
-  VERIFIED: "Processing",
-  PICKING: "Processing",
-  PACKED: "Processing",
-  DISPATCHED: "Dispatched",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-  RETURNED: "Returned",
-};
+import type { CartItem, OrderInvoice, RetailerOrder } from "../types";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("en-IN", {
@@ -192,7 +181,7 @@ export default function OrderHistory() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-widest text-muted">
-                      {formatDate(order.placedAt)} · {statusLabels[order.status]}
+                      {formatDate(order.placedAt)}
                     </p>
                     <h2 className="mt-1 text-lg font-black text-primary">{order.orderNo}</h2>
                     <p className="mt-1 text-sm font-semibold text-muted">
@@ -243,7 +232,7 @@ export default function OrderHistory() {
                 </p>
                 <p className="mt-1 font-black text-navy">{formatDate(selectedOrder.placedAt)}</p>
                 <p className="mt-1 text-sm font-semibold text-muted">
-                  Status: {statusLabels[selectedOrder.status]}
+                  {selectedOrder.items.length} items
                 </p>
               </div>
 

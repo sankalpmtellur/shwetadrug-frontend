@@ -49,11 +49,6 @@ export const orderService = {
     return response.data.data;
   },
 
-  async updateStatus(id: string, status: BackendOrderStatus) {
-    const response = await api.patch<ApiResponse<EmployeeOrder>>(`/orders/${id}/status`, { status });
-    return response.data.data;
-  },
-
   async downloadInvoicePdf(id: string) {
     const response = await api.get<Blob>(`/orders/${id}/invoice/pdf`, {
       responseType: "blob",

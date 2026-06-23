@@ -47,7 +47,4 @@ export const operationsService = {
   getOrders() {
     return getList<Order>("/orders");
   },
-  updateOrderStatus(id: string, status: string) {
-    return apiResult<Order>(api.patch(`/orders/${id}/status`, { status }));
-  },
 };

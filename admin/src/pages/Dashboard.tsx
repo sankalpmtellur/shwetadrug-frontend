@@ -48,10 +48,7 @@ function getKpis(dashboard: AdminDashboard | null): Kpi[] {
     {
       label: "Total Orders",
       value: formatCount(dashboard?.totalOrders),
-      hint:
-        hasValue(dashboard?.pendingOrders) && hasValue(dashboard?.deliveredOrders)
-          ? `${formatCount(dashboard?.pendingOrders)} pending, ${formatCount(dashboard?.deliveredOrders)} delivered`
-          : "Order status unavailable",
+      hint: hasValue(dashboard?.totalOrders) ? "Backend order records" : "Order count unavailable",
       tone: "green",
     },
     {
