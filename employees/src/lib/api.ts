@@ -7,11 +7,13 @@ type RetryableRequest = InternalAxiosRequestConfig & {
 };
 
 const csrfCookieName = "csrfToken";
+const portalRoleHeader = { "X-Portal-Role": "EMPLOYEE" };
 let refreshRequest: Promise<{ data: ApiResponse<AuthResponse> }> | null = null;
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api/v1",
   withCredentials: true,
+  headers: portalRoleHeader,
 });
 
 function readCookie(name: string) {
@@ -38,7 +40,7 @@ function refreshSession() {
     .post<ApiResponse<AuthResponse>>(
       `${api.defaults.baseURL}/auth/refresh-token`,
       {},
-      { withCredentials: true, headers: getCsrfHeaders() },
+      { withCredentials: true, headers: { ...portalRoleHeader, ...getCsrfHeaders() } },
     )
     .finally(() => {
       refreshRequest = null;

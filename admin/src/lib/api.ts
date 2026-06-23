@@ -40,6 +40,7 @@ export class ApiError extends Error {
 
 const legacyAccessTokenKey = "admin_access_token";
 const csrfCookieName = "csrfToken";
+const portalRoleHeader = { "X-Portal-Role": "ADMIN" };
 let accessToken: string | null = null;
 let refreshRequest: Promise<{ data: ApiResponse<RefreshPayload> }> | null = null;
 
@@ -65,6 +66,7 @@ const api = axios.create({
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
+    ...portalRoleHeader,
   },
 });
 
@@ -92,7 +94,7 @@ function refreshSession() {
     .post<ApiResponse<RefreshPayload>>(
       `${api.defaults.baseURL}/auth/refresh-token`,
       {},
-      { withCredentials: true, headers: getCsrfHeaders() },
+      { withCredentials: true, headers: { ...portalRoleHeader, ...getCsrfHeaders() } },
     )
     .finally(() => {
       refreshRequest = null;
