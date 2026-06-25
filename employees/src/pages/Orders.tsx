@@ -332,12 +332,12 @@ function Pagination({ page, totalPages, totalItems, onPageChange }: { page: numb
   return (
     <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm font-semibold text-muted">{totalItems} orders · Page {page} of {totalPages}</p>
-      <div className="flex gap-2">
-        <Button className="h-9 gap-2 px-3" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+      <div className="grid grid-cols-2 gap-2 sm:flex">
+        <Button className="h-9 w-full gap-2 px-3 sm:w-auto" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
           <ChevronLeft className="h-4 w-4" />
           Previous
         </Button>
-        <Button className="h-9 gap-2 px-3" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+        <Button className="h-9 w-full gap-2 px-3 sm:w-auto" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
           Next
           <ChevronRight className="h-4 w-4" />
         </Button>

@@ -23,5 +23,5 @@ export function Table({ headers, children }: { headers: string[]; children: Reac
 }
 
 export function Cell({ children, strong }: { children: ReactNode; strong?: boolean }) {
-  return <td className={`px-4 py-4 ${strong ? "font-bold text-primary" : "text-muted"}`}>{children}</td>;
+  return <td className={`max-w-72 break-words px-4 py-4 align-top ${strong ? "font-bold text-primary" : "text-muted"}`}>{children}</td>;
 }

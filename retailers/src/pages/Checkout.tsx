@@ -73,7 +73,7 @@ export default function Checkout() {
           Back to inventory
         </Link>
 
-        <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-5">
             <Card className="p-5">
               <div className="mb-4 flex items-center gap-3">
@@ -104,15 +104,15 @@ export default function Checkout() {
               {items.length ? (
                 <div className="divide-y divide-border">
                   {items.map((item) => (
-                    <div key={item.sku} className="grid gap-4 p-5 sm:grid-cols-[56px_1fr_auto] sm:items-center">
+                    <div key={item.sku} className="grid gap-4 p-4 sm:grid-cols-[56px_minmax(0,1fr)_auto] sm:items-center sm:p-5">
                       <div className="grid h-14 w-14 place-items-center rounded-lg bg-surface-strong text-primary"><CheckCircle2 className="h-6 w-6" /></div>
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-navy">{item.name}</h3>
-                        <p className="text-sm text-muted">SKU: {item.sku} | {item.pack}</p>
+                        <h3 className="break-words font-semibold text-navy">{item.name}</h3>
+                        <p className="break-words text-sm text-muted">SKU: {item.sku} | {item.pack}</p>
                         <Badge className="mt-2" tone={item.status === "Limited" ? "orange" : "green"}>{item.qty} units</Badge>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                        <p className="mr-auto text-lg font-bold text-navy sm:mr-2">{currency(item.amount)}</p>
+                      <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
+                        <p className="text-lg font-bold text-navy sm:mr-2">{currency(item.amount)}</p>
                         <div className="flex overflow-hidden rounded-lg border border-border bg-white">
                           <button type="button" onClick={() => setItemQuantity(item.medicineId, item.qty - 1)} className="grid h-9 w-9 place-items-center text-muted" aria-label={`Decrease ${item.name}`}>
                             <Minus className="h-4 w-4" />

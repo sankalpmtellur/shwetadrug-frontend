@@ -10,9 +10,9 @@ export function BottomCartBar() {
   if (count === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-5 z-50 px-3 sm:bottom-8">
-      <div className="mx-auto flex w-full items-center gap-3 rounded-2xl border border-border bg-white p-3 shadow-soft sm:w-[75%] sm:max-w-[900px]">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-primary text-white">
+    <div className="fixed inset-x-0 bottom-3 z-50 px-3 sm:bottom-8">
+      <div className="mx-auto flex w-full items-center gap-2 rounded-xl border border-border bg-white p-2 shadow-soft sm:w-[75%] sm:max-w-[900px] sm:gap-3 sm:rounded-2xl sm:p-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary text-white sm:h-12 sm:w-12 sm:rounded-xl">
           <ShoppingCart className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
@@ -51,7 +51,7 @@ export function BottomCartBar() {
           <button
             type="button"
             onClick={() => removeItem(latestItem.medicineId)}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-red-50 text-error"
+            className="hidden h-11 w-11 shrink-0 place-items-center rounded-xl bg-red-50 text-error sm:grid"
             aria-label={`Remove ${latestItem.name}`}
           >
             <Trash2 className="h-5 w-5" />
@@ -59,9 +59,9 @@ export function BottomCartBar() {
         ) : null}
         <Link
           to="/checkout"
-          className="shrink-0 rounded-xl bg-primary px-4 py-3 text-sm font-black text-white"
+          className="shrink-0 rounded-lg bg-primary px-3 py-2.5 text-sm font-black text-white sm:rounded-xl sm:px-4 sm:py-3"
         >
-          Buy
+          Checkout
         </Link>
       </div>
     </div>

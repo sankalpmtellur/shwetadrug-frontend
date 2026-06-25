@@ -309,8 +309,8 @@ export default function Inventory() {
             </div>
           ) : null}
 
-          {!isLoading && !error ? (
-            <Table headers={["Medicine", "SKU", "Batch", "Qty", "Price", "Expiry", "Action"]}>
+        {!isLoading && !error && items.length > 0 ? (
+          <Table headers={["Medicine", "SKU", "Batch", "Qty", "Price", "Expiry", "Action"]}>
               {pageItems.map((item) => (
                 <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
                   <Cell strong>{item.medicine.name}</Cell>
@@ -345,11 +345,11 @@ function Pagination({ page, totalPages, totalItems, onPageChange }: { page: numb
       <p className="text-sm font-semibold text-muted">
         {totalItems} inventory lots · Page {page} of {totalPages}
       </p>
-      <div className="flex gap-2">
-        <Button type="button" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+      <div className="grid grid-cols-2 gap-2 sm:flex">
+        <Button type="button" className="w-full sm:w-auto" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
           Previous
         </Button>
-        <Button type="button" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+        <Button type="button" className="w-full sm:w-auto" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
           Next
         </Button>
       </div>

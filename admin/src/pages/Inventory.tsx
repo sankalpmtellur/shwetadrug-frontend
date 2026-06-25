@@ -160,9 +160,9 @@ export default function Inventory() {
                   <Cell>{formatCurrency(item.medicine.mrp)}</Cell>
                   <Cell>{formatCurrency(item.medicine.sellingPrice)}</Cell>
                   <Cell>
-                    <div className="flex min-w-40 items-center gap-2">
+                    <div className="grid min-w-40 gap-2 sm:flex sm:items-center">
                       <input
-                        className="h-10 w-24 rounded-lg border border-border px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                        className="h-10 w-full rounded-lg border border-border px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 sm:w-24"
                         type="number"
                         min="0"
                         value={draft.quantity}
@@ -189,9 +189,9 @@ function Pagination({ page, totalPages, totalItems, onPageChange }: { page: numb
   return (
     <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm font-semibold text-muted">{formatCount(totalItems)} lots · Page {page} of {totalPages}</p>
-      <div className="flex gap-2">
-        <Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Previous</Button>
-        <Button variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>Next</Button>
+      <div className="grid grid-cols-2 gap-2 sm:flex">
+        <Button className="w-full sm:w-auto" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Previous</Button>
+        <Button className="w-full sm:w-auto" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>Next</Button>
       </div>
     </div>
   );

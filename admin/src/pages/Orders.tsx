@@ -10,7 +10,7 @@ import type { ListMeta } from "../lib/api";
 import { formatCount, formatCurrency, formatDate } from "../utils/formatters";
 
 export default function Orders() {
-const [items, setItems] = useState<Order[]>([]);
+  const [items, setItems] = useState<Order[]>([]);
   const [meta, setMeta] = useState<ListMeta>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,11 +99,11 @@ function Pagination({ page, totalPages, totalItems, onPageChange }: { page: numb
       <p className="text-sm font-semibold text-muted">
         {formatCount(totalItems)} orders · Page {page} of {totalPages}
       </p>
-      <div className="flex gap-2">
-        <Button type="button" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+      <div className="grid grid-cols-2 gap-2 sm:flex">
+        <Button type="button" className="w-full sm:w-auto" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
           Previous
         </Button>
-        <Button type="button" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+        <Button type="button" className="w-full sm:w-auto" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
           Next
         </Button>
       </div>

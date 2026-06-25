@@ -73,7 +73,7 @@ export default function Expiry() {
           </div>
         ) : null}
 
-        {!isLoading && !error ? (
+        {!isLoading && !error && alerts.length > 0 ? (
           <Table headers={["Medicine", "SKU", "Batch", "Expiry", "Days Left", "Quantity"]}>
             {alerts.map((item) => {
               const daysRemaining = getDaysRemaining(item.expiryDate);

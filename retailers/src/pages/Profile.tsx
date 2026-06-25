@@ -193,12 +193,12 @@ export default function Profile() {
                     <p className="text-xs font-black uppercase tracking-widest text-primary">
                       {profile.retailer?.status === "ACTIVE" ? "Verified Retailer" : "Retailer"}
                     </p>
-                    <h1 className="mt-1 truncate text-2xl font-black text-navy sm:text-3xl">
+                    <h1 className="mt-1 break-words text-2xl font-black text-navy sm:text-3xl">
                       {profile.retailer?.pharmacyName ?? profile.name}
                     </h1>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="grid w-full gap-2 sm:w-auto sm:grid-flow-col">
                   {isEditing ? (
                     <>
                       <Button type="button" variant="ghost" onClick={cancelEdit} disabled={isSaving}>
@@ -312,8 +312,8 @@ export default function Profile() {
                   onChange={(value) => setPasswordForm((current) => ({ ...current, confirmNewPassword: value }))}
                 />
               </div>
-              <div className="mt-4 flex justify-end">
-                <Button type="button" onClick={changePassword} disabled={isChangingPassword}>
+              <div className="mt-4 flex justify-stretch sm:justify-end">
+                <Button type="button" className="w-full sm:w-auto" onClick={changePassword} disabled={isChangingPassword}>
                   {isChangingPassword ? "Changing..." : "Change Password"}
                 </Button>
               </div>
