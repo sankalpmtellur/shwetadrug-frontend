@@ -15,6 +15,8 @@ const links = [
   { to: "/orders", label: "Orders", icon: ShoppingBag },
 ];
 
+export const ADMIN_BADGES_REFRESH_EVENT = "sdd-admin-badges-refresh";
+
 export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boolean) => void }) {
   const navigate = useNavigate();
   const { isLoading, logout } = useAuth();
@@ -44,9 +46,11 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boo
     }
 
     void loadBadges();
+    window.addEventListener(ADMIN_BADGES_REFRESH_EVENT, loadBadges);
 
     return () => {
       isMounted = false;
+      window.removeEventListener(ADMIN_BADGES_REFRESH_EVENT, loadBadges);
     };
   }, []);
 
@@ -108,7 +112,7 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boo
 
   return (
     <>
-      <button className="fixed left-4 top-4 z-30 rounded-lg bg-white p-2 shadow-sm md:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
+      <button className="fixed left-4 top-4 z-50 rounded-lg bg-white p-2 shadow-sm md:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
         <Menu className="h-5 w-5 text-navy" />
       </button>
       <div className="fixed inset-y-0 left-0 z-40 hidden w-[280px] md:block">{panel}</div>

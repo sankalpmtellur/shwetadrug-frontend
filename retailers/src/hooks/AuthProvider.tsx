@@ -27,15 +27,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
-      const refreshed = await authService.refreshToken();
-      if (refreshed.user.role !== "RETAILER" || !refreshed.user.retailerId) {
-        clearAuth(false);
-        setUser(null);
-        setProfile(null);
-        return null;
+      if (!getAccessToken()) {
+        const refreshed = await authService.refreshToken();
+        if (refreshed.user.role !== "RETAILER" || !refreshed.user.retailerId) {
+          clearAuth(false);
+          setUser(null);
+          setProfile(null);
+          return null;
+        }
+
+        saveAuth(refreshed, false);
       }
 
-      saveAuth(refreshed, false);
       const nextProfile = await profileService.getProfile();
 
       if (nextProfile.role !== "RETAILER" || !nextProfile.retailerId) {

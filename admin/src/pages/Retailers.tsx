@@ -4,6 +4,7 @@ import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Metric } from "../components/common/Metric";
 import { Cell, Table } from "../components/common/Table";
+import { ADMIN_BADGES_REFRESH_EVENT } from "../components/layout/Sidebar";
 import { retailerService } from "../services/retailerService";
 import type { RetailerAccount } from "../services/retailerService";
 import type { ListMeta } from "../services/inventoryService";
@@ -83,6 +84,7 @@ export default function Retailers() {
     try {
       const result = await retailerService.updateRetailerStatus(id, status, temporaryPassword);
       setRetailers((current) => sortRetailersForAction(current.map((row) => (row.id === id ? result.data : row))));
+      window.dispatchEvent(new Event(ADMIN_BADGES_REFRESH_EVENT));
       setTemporaryPasswords((current) => {
         const next = { ...current };
         delete next[id];
