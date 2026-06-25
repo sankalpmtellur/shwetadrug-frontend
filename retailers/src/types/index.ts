@@ -17,14 +17,6 @@ export type Medicine = {
   status: "In Stock" | "Limited" | "Out";
 };
 
-export type Order = {
-  id: string;
-  date: string;
-  items: number;
-  value: number;
-  status: "Delivered" | "Processing" | "Dispatched" | "Cancelled" | "Returned";
-};
-
 export type CartItem = {
   medicineId: string;
   name: string;
@@ -66,8 +58,6 @@ export type RetailerProfile = {
     defaultAddress: DefaultAddress | null;
   } | null;
 };
-
-export type PaymentMethod = "UPI" | "CASH_ON_DELIVERY";
 
 export type CreatedOrder = {
   id: string;
