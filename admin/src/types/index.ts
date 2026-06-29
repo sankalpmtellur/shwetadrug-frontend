@@ -4,8 +4,3 @@ export type Kpi = {
   hint: string;
   tone: "blue" | "green" | "orange";
 };
-
-export type RevenuePoint = {
-  label: string;
-  value: number;
-};

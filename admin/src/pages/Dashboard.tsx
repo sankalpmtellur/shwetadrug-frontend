@@ -1,73 +1,31 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
+  AlertTriangle,
   BarChart3,
   Boxes,
   Building2,
+  CalendarDays,
   IndianRupee,
+  PackageSearch,
   ShoppingBag,
+  Store,
+  UsersRound,
 } from "lucide-react";
-import { Badge } from "../components/common/Badge";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
+import { Cell, Table } from "../components/common/Table";
 import { Metric } from "../components/common/Metric";
-import { monthlyRevenue, weeklyRevenue } from "../data/mockData";
 import { dashboardService } from "../services/dashboardService";
 import type { AdminDashboard } from "../services/dashboardService";
-import type { Kpi } from "../types";
+import { formatCount, formatCurrency } from "../utils/formatters";
 
-const icons = [IndianRupee, ShoppingBag, Building2, Boxes];
-
-type ChartMode = "monthly" | "weekly";
-
-function formatCount(value: number | null | undefined) {
-  return typeof value === "number" ? new Intl.NumberFormat("en-IN").format(value) : "-";
-}
-
-function formatCurrency(value: number | null | undefined) {
-  return typeof value === "number"
-    ? new Intl.NumberFormat("en-IN", {
-        currency: "INR",
-        maximumFractionDigits: 0,
-        style: "currency",
-      }).format(value)
-    : "-";
-}
-
-function hasValue(value: number | null | undefined) {
-  return typeof value === "number";
-}
-
-function getKpis(dashboard: AdminDashboard | null): Kpi[] {
-  return [
-    {
-      label: "Total Revenue",
-      value: formatCurrency(dashboard?.totalRevenue),
-      hint: "Confirmed order value",
-      tone: "blue",
-    },
-    {
-      label: "Total Orders",
-      value: formatCount(dashboard?.totalOrders),
-      hint: hasValue(dashboard?.totalOrders) ? "Backend order records" : "Order count unavailable",
-      tone: "green",
-    },
-    {
-      label: "Active Retailers",
-      value: formatCount(dashboard?.totalRetailers),
-      hint: "Registered retailer accounts",
-      tone: "blue",
-    },
-    {
-      label: "Inventory Items",
-      value: formatCount(dashboard?.inventoryCount),
-      hint: hasValue(dashboard?.totalMedicines) ? `${formatCount(dashboard?.totalMedicines)} medicines` : "Medicine count unavailable",
-      tone: "orange",
-    },
-  ];
+function valueOrZero(value: number | null | undefined) {
+  return typeof value === "number" ? value : 0;
 }
 
 export default function Dashboard() {
-  const [chartMode, setChartMode] = useState<ChartMode>("monthly");
+  const navigate = useNavigate();
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,19 +52,20 @@ export default function Dashboard() {
     return () => window.clearTimeout(timeoutId);
   }, [loadDashboard]);
 
-  // Temporary mock chart data: the admin dashboard API currently exposes aggregate KPIs only.
-  const chartData = chartMode === "monthly" ? monthlyRevenue : weeklyRevenue;
-  const kpis = useMemo(() => getKpis(dashboard), [dashboard]);
-  const isEmpty = !isLoading && !error && !Object.values(dashboard ?? {}).some((value) => typeof value === "number");
-
-  const maxValue = useMemo(
-    () => Math.max(...chartData.map((item) => item.value)),
-    [chartData]
-  );
-
+  const monthlySales = dashboard?.monthlySales ?? [];
+  const topMedicines = dashboard?.topSellingMedicines ?? [];
+  const topRetailers = dashboard?.topRetailersByOrderValue ?? [];
+  const maxSalesValue = useMemo(() => Math.max(0, ...monthlySales.map((item) => item.value)), [monthlySales]);
   const yAxisValues = useMemo(() => {
-    return [maxValue, Math.round(maxValue * 0.75), Math.round(maxValue * 0.5), Math.round(maxValue * 0.25), 0];
-  }, [maxValue]);
+    if (maxSalesValue <= 0) return [0, 0, 0, 0, 0];
+    return [
+      maxSalesValue,
+      Math.round(maxSalesValue * 0.75),
+      Math.round(maxSalesValue * 0.5),
+      Math.round(maxSalesValue * 0.25),
+      0,
+    ];
+  }, [maxSalesValue]);
 
   return (
     <>
@@ -132,100 +91,205 @@ export default function Dashboard() {
 
       {!isLoading && !error ? (
         <>
-          {isEmpty ? (
-            <Card>
-              <p className="text-sm font-bold text-muted">Dashboard data is unavailable right now.</p>
-            </Card>
-          ) : null}
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Metric
+              icon={<ShoppingBag />}
+              label="Orders Today"
+              value={formatCount(valueOrZero(dashboard?.ordersToday))}
+              hint="Placed order count"
+              onClick={() => navigate("/orders")}
+              tone="blue"
+            />
+            <Metric
+              icon={<CalendarDays />}
+              label="Orders This Month"
+              value={formatCount(valueOrZero(dashboard?.ordersThisMonth))}
+              hint="Placed this month"
+              onClick={() => navigate("/orders")}
+              tone="green"
+            />
+            <Metric
+              icon={<IndianRupee />}
+              label="Revenue Today"
+              value={formatCurrency(valueOrZero(dashboard?.revenueToday))}
+              hint="Placed order value"
+              onClick={() => navigate("/orders")}
+              tone="blue"
+            />
+            <Metric
+              icon={<BarChart3 />}
+              label="Revenue This Month"
+              value={formatCurrency(valueOrZero(dashboard?.revenueThisMonth))}
+              hint="Placed order value"
+              onClick={() => navigate("/orders")}
+              tone="green"
+            />
+            <Metric
+              icon={<Boxes />}
+              label="Low Stock"
+              value={formatCount(valueOrZero(dashboard?.lowStockMedicinesCount))}
+              hint="Medicines needing stock action"
+              onClick={() => navigate("/inventory")}
+              tone="orange"
+            />
+            <Metric
+              icon={<AlertTriangle />}
+              label="Expiring Medicines"
+              value={formatCount(valueOrZero(dashboard?.medicinesExpiringNext60DaysCount))}
+              hint="Within next 60 days"
+              onClick={() => navigate("/expiry")}
+              tone="orange"
+            />
+            <Metric
+              icon={<UsersRound />}
+              label="Pending Approvals"
+              value={formatCount(valueOrZero(dashboard?.pendingRetailerApprovals))}
+              hint="Retailers awaiting review"
+              onClick={() => navigate("/retailers")}
+              tone="orange"
+            />
+            <Metric
+              icon={<Store />}
+              label="Active Retailers"
+              value={formatCount(valueOrZero(dashboard?.activeRetailers))}
+              hint={`${formatCount(valueOrZero(dashboard?.totalRetailers))} total retailers`}
+              onClick={() => navigate("/retailers")}
+              tone="blue"
+            />
+          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {kpis.map((kpi, index) => {
-              const Icon = icons[index] ?? BarChart3;
-              return <Metric key={kpi.label} {...kpi} icon={<Icon />} />;
-            })}
+          <div className="grid min-w-0 gap-4 md:grid-cols-3">
+            <Metric
+              icon={<ShoppingBag />}
+              label="Total Orders"
+              value={formatCount(valueOrZero(dashboard?.totalOrders))}
+              hint={`${formatCount(valueOrZero(dashboard?.pendingOrders))} pending orders`}
+              onClick={() => navigate("/orders")}
+              tone="blue"
+            />
+            <Metric
+              icon={<IndianRupee />}
+              label="Total Revenue"
+              value={formatCurrency(valueOrZero(dashboard?.totalRevenue))}
+              hint="Total placed order value"
+              onClick={() => navigate("/orders")}
+              tone="green"
+            />
+            <Metric
+              icon={<Building2 />}
+              label="Catalog"
+              value={formatCount(valueOrZero(dashboard?.totalMedicines))}
+              hint={`${formatCount(valueOrZero(dashboard?.inventoryCount))} inventory lots`}
+              onClick={() => navigate("/medicines")}
+              tone="blue"
+            />
           </div>
         </>
       ) : null}
 
-      <Card>
-        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-black text-navy">Revenue Trend</h2>
-              <Badge tone="green">+12.4%</Badge>
-            </div>
-
-            <p className="mt-1 text-sm text-muted">
-              {chartMode === "monthly"
-                ? "Monthly revenue trend across the year."
-                : "Revenue trend for the current week."}
-            </p>
+      <Card className="overflow-hidden">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-lg font-black text-navy">Monthly Sales</h2>
+            <p className="mt-1 text-sm text-muted">Placed order value for the last 12 months.</p>
           </div>
-
-          <div className="grid grid-cols-2 rounded-lg border border-border bg-white p-1">
-            {(["monthly", "weekly"] as ChartMode[]).map((mode) => (
-              <button
-                key={mode}
-                className={`rounded-md px-4 py-2 text-sm font-bold capitalize transition ${
-                  chartMode === mode
-                    ? "bg-primary text-white"
-                    : "text-muted hover:bg-surface-soft"
-                }`}
-                onClick={() => setChartMode(mode)}
-                type="button"
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
+          <p className="text-sm font-black text-primary sm:text-right">{formatCurrency(maxSalesValue)} peak month</p>
         </div>
 
-        <div className="rounded-xl bg-surface-soft p-4 sm:p-5">
-          <div className="flex gap-4">
-            <div className="flex h-80 w-12 flex-col justify-between pb-8 text-right text-[11px] font-bold text-muted">
-              {yAxisValues.map((value) => (
-                <span key={value}>₹{value}L</span>
+        <div className="min-w-0 rounded-lg bg-surface-soft p-3 sm:p-5">
+          <div className="flex min-w-0 gap-3 sm:gap-4">
+            <div className="flex h-72 w-16 shrink-0 flex-col justify-between pb-8 text-right text-[10px] font-bold text-muted sm:h-80 sm:w-20 sm:text-[11px]">
+              {yAxisValues.map((value, index) => (
+                <span key={`${value}-${index}`}>{formatCurrency(value)}</span>
               ))}
             </div>
 
-            <div className="relative flex h-80 flex-1 items-end gap-2 border-l border-b border-border pl-3 sm:gap-3">
+            <div className="min-w-0 flex-1 overflow-x-auto pb-2">
+              <div className="relative flex h-72 min-w-[560px] items-end gap-2 border-l border-b border-border pl-3 sm:h-80 sm:min-w-[640px] sm:gap-3">
               <div className="pointer-events-none absolute inset-x-3 top-0 h-[calc(100%-2rem)]">
-                {yAxisValues.slice(0, 4).map((value) => (
-                  <div
-                    key={value}
-                    className="h-1/4 border-t border-border/70"
-                  />
+                {yAxisValues.slice(0, 4).map((value, index) => (
+                  <div key={`${value}-${index}`} className="h-1/4 border-t border-border/70" />
                 ))}
               </div>
 
-              {chartData.map((item) => {
-                const height = Math.max((item.value / maxValue) * 240, 24);
+              <div className="relative z-10 flex h-full flex-1 items-end gap-2 sm:gap-3">
+                {monthlySales.map((item) => {
+                  const height = maxSalesValue > 0 ? Math.max((item.value / maxSalesValue) * 220, item.value > 0 ? 18 : 0) : 0;
 
-                return (
-                  <div
-                    key={item.label}
-                    className="relative z-10 flex min-w-0 flex-1 flex-col items-center justify-end gap-2"
-                  >
-                    <span className="text-[10px] font-black text-primary sm:text-xs">
-                      ₹{item.value}L
-                    </span>
-
-                    <div
-                      className="w-full max-w-12 rounded-t-xl bg-primary shadow-sm transition-all duration-500 hover:bg-primary/90"
-                      style={{ height }}
-                      title={`${item.label}: ₹${item.value}L`}
-                    />
-
-                    <span className="h-6 text-[10px] font-black uppercase tracking-wide text-muted sm:text-xs">
-                      {item.label}
-                    </span>
-                  </div>
-                );
-              })}
+                  return (
+                    <div key={item.month} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2">
+                      <span className="max-w-16 truncate text-[10px] font-black text-primary sm:text-xs">{formatCurrency(item.value)}</span>
+                      <div
+                        className="w-full max-w-12 rounded-t-lg bg-primary shadow-sm transition-all duration-500 hover:bg-primary/90"
+                        style={{ height }}
+                        title={`${item.label}: ${formatCurrency(item.value)}`}
+                      />
+                      <span className="h-6 text-[10px] font-black uppercase text-muted sm:text-xs">{item.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              </div>
             </div>
           </div>
         </div>
       </Card>
+
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+        <Card className="overflow-hidden">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="shrink-0 rounded-lg bg-amber-50 p-2 text-warning">
+              <PackageSearch />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-black text-navy">Top Selling Medicines</h2>
+              <p className="text-sm text-muted">Ranked by quantity sold.</p>
+            </div>
+          </div>
+
+          {topMedicines.length === 0 ? (
+            <p className="text-sm font-bold text-muted">No medicine sales yet.</p>
+          ) : (
+            <Table headers={["Medicine", "SKU", "Qty", "Value"]}>
+              {topMedicines.map((item) => (
+                <tr key={item.medicineId} className="border-b border-border last:border-0">
+                  <Cell strong>{item.name}</Cell>
+                  <Cell>{item.sku}</Cell>
+                  <Cell>{formatCount(item.quantity)}</Cell>
+                  <Cell>{formatCurrency(item.value)}</Cell>
+                </tr>
+              ))}
+            </Table>
+          )}
+        </Card>
+
+        <Card className="overflow-hidden">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="shrink-0 rounded-lg bg-surface-strong p-2 text-primary">
+              <Building2 />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-black text-navy">Top Retailers</h2>
+              <p className="text-sm text-muted">Ranked by placed order value.</p>
+            </div>
+          </div>
+
+          {topRetailers.length === 0 ? (
+            <p className="text-sm font-bold text-muted">No retailer orders yet.</p>
+          ) : (
+            <Table headers={["Retailer", "Owner", "Orders", "Value"]}>
+              {topRetailers.map((item) => (
+                <tr key={item.retailerId} className="border-b border-border last:border-0">
+                  <Cell strong>{item.pharmacyName}</Cell>
+                  <Cell>{item.ownerName}</Cell>
+                  <Cell>{formatCount(item.orderCount)}</Cell>
+                  <Cell>{formatCurrency(item.value)}</Cell>
+                </tr>
+              ))}
+            </Table>
+          )}
+        </Card>
+      </div>
     </>
   );
 }
