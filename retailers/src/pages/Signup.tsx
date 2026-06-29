@@ -8,7 +8,7 @@ import { authService } from "../services/authService";
 
 const initialForm = {
   ownerName: "",
-  shopName: "",
+  pharmacyName: "",
   phone: "",
   email: "",
   gstNumber: "",
@@ -20,19 +20,47 @@ const initialForm = {
 
 export default function Signup() {
   const [form, setForm] = useState(initialForm);
+  const [addressError, setAddressError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   function updateField(field: keyof typeof initialForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (field === "address") {
+      setAddressError("");
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const address = form.address.trim();
+    if (!address) {
+      setAddressError("Address is required.");
+      toast.error("Please enter your pharmacy address.");
+      return;
+    }
+
+    if (address.length < 5) {
+      setAddressError("Address must be at least 5 characters.");
+      toast.error("Address must be at least 5 characters.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await authService.retailerSignup(form);
+      await authService.retailerSignup({
+        ownerName: form.ownerName.trim(),
+        pharmacyName: form.pharmacyName.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        gstNumber: form.gstNumber.trim(),
+        address,
+        city: form.city.trim(),
+        state: form.state.trim(),
+        pincode: form.pincode.trim(),
+      });
       toast.success("Signup submitted. Please wait for admin approval.");
       navigate("/login", { replace: true });
     } catch {
@@ -51,7 +79,7 @@ export default function Signup() {
         </label>
         <label className="block text-sm font-semibold text-navy">
           Pharmacy Name
-          <Input className="mt-2" value={form.shopName} onChange={(event) => updateField("shopName", event.target.value)} placeholder="Your pharmacy name" required />
+          <Input className="mt-2" value={form.pharmacyName} onChange={(event) => updateField("pharmacyName", event.target.value)} placeholder="Your pharmacy name" required />
         </label>
         <label className="block text-sm font-semibold text-navy">
           Phone Number
@@ -67,7 +95,17 @@ export default function Signup() {
         </label>
         <label className="block text-sm font-semibold text-navy">
           Address
-          <Input className="mt-2" value={form.address} onChange={(event) => updateField("address", event.target.value)} placeholder="Shop number, building, street" required />
+          <Input
+            className="mt-2"
+            value={form.address}
+            onChange={(event) => updateField("address", event.target.value)}
+            placeholder="Shop number, building, street"
+            required
+            minLength={5}
+            aria-invalid={Boolean(addressError)}
+            aria-describedby={addressError ? "signup-address-error" : undefined}
+          />
+          {addressError ? <span id="signup-address-error" className="mt-1 block text-xs font-semibold text-error">{addressError}</span> : null}
         </label>
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="block text-sm font-semibold text-navy">

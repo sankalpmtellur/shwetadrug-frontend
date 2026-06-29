@@ -33,7 +33,7 @@ export type RetailerSignupPayload = {
   ownerName: string;
   email: string;
   phone: string;
-  shopName: string;
+  pharmacyName: string;
   gstNumber?: string;
   address: string;
   city: string;
