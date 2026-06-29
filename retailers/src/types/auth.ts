@@ -21,6 +21,7 @@ export type ApiResponse<T> = {
 export type AuthResponse = {
   user: User;
   accessToken: string;
+  csrfToken: string;
 };
 
 export type LoginPayload = {

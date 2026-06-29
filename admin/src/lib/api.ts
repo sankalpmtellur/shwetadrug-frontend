@@ -24,7 +24,7 @@ type RetryableRequest = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
 
-type RefreshPayload = { accessToken: string; user: { role: string } };
+type RefreshPayload = { accessToken: string; csrfToken: string; user: { role: string } };
 
 export class ApiError extends Error {
   status?: number;
@@ -39,9 +39,9 @@ export class ApiError extends Error {
 }
 
 const legacyAccessTokenKey = "admin_access_token";
-const csrfCookieName = "csrfToken";
 const portalRoleHeader = { "X-Portal-Role": "ADMIN" };
 let accessToken: string | null = null;
+let csrfToken: string | null = null;
 let refreshRequest: Promise<{ data: ApiResponse<RefreshPayload> }> | null = null;
 
 if (typeof window !== "undefined") {
@@ -52,11 +52,19 @@ export const tokenStorage = {
   get() {
     return accessToken;
   },
-  set(token: string) {
+  set(token: string, nextCsrfToken?: string) {
     accessToken = token;
+    if (nextCsrfToken !== undefined) {
+      csrfToken = nextCsrfToken;
+    }
+  },
+  setAuth(auth: { accessToken: string; csrfToken: string }) {
+    accessToken = auth.accessToken;
+    csrfToken = auth.csrfToken;
   },
   clear() {
     accessToken = null;
+    csrfToken = null;
     localStorage.removeItem(legacyAccessTokenKey);
   },
 };
@@ -70,23 +78,12 @@ const api = axios.create({
   },
 });
 
-function readCookie(name: string) {
-  if (typeof document === "undefined") return null;
-
-  const cookie = document.cookie
-    .split("; ")
-    .find((item) => item.startsWith(`${name}=`));
-
-  return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null;
-}
-
 function isCsrfProtectedUrl(url?: string) {
   return Boolean(url?.includes("/auth/refresh-token") || url?.includes("/auth/logout"));
 }
 
 function getCsrfHeaders() {
-  const token = readCookie(csrfCookieName);
-  return token ? { "X-CSRF-Token": token } : {};
+  return csrfToken ? { "X-CSRF-Token": csrfToken } : {};
 }
 
 function refreshSession() {
@@ -108,7 +105,6 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  const csrfToken = readCookie(csrfCookieName);
   if (csrfToken && isCsrfProtectedUrl(config.url)) {
     (config.headers as Record<string, string>)["X-CSRF-Token"] = csrfToken;
   }
@@ -140,7 +136,7 @@ api.interceptors.response.use(
         return Promise.reject(new ApiError("Only admin users can access the admin portal", 403));
       }
 
-      tokenStorage.set(response.data.data.accessToken);
+      tokenStorage.setAuth(response.data.data);
       originalRequest.headers.Authorization = `Bearer ${response.data.data.accessToken}`;
       return api(originalRequest);
     } catch (refreshError) {

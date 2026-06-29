@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function restoreSession() {
       try {
         const refreshed = await authService.refreshToken();
-        tokenStorage.set(refreshed.accessToken);
+        tokenStorage.setAuth(refreshed);
         await loadAdminProfile();
       } catch {
         clearSession();
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         const result = await authService.login(email, password);
-        tokenStorage.set(result.accessToken);
+        tokenStorage.setAuth(result);
 
         const profile = await authService.getProfile();
         if (!isAdmin(profile)) {

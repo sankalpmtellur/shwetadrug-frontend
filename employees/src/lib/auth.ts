@@ -4,6 +4,7 @@ const LEGACY_ACCESS_TOKEN_KEY = "sdd_employee_access_token";
 const LEGACY_REFRESH_TOKEN_KEY = "sdd_employee_refresh_token";
 const USER_KEY = "sdd_employee_user";
 let accessToken: string | null = null;
+let csrfToken: string | null = null;
 
 if (typeof window !== "undefined") {
   localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
@@ -11,6 +12,7 @@ if (typeof window !== "undefined") {
 
 export function saveAuth(auth: AuthResponse) {
   accessToken = auth.accessToken;
+  csrfToken = auth.csrfToken;
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
   localStorage.setItem(USER_KEY, JSON.stringify(auth.user));
 }
@@ -21,6 +23,10 @@ export function saveUser(user: User) {
 
 export function getAccessToken() {
   return accessToken;
+}
+
+export function getCsrfToken() {
+  return csrfToken;
 }
 
 export function getUser(): User | null {
@@ -37,6 +43,7 @@ export function getUser(): User | null {
 
 export function clearAuth() {
   accessToken = null;
+  csrfToken = null;
   localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);

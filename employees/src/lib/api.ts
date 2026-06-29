@@ -1,12 +1,11 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { clearAuth, getAccessToken, saveAuth } from "./auth";
+import { clearAuth, getAccessToken, getCsrfToken, saveAuth } from "./auth";
 import type { ApiResponse, AuthResponse } from "../types/auth";
 
 type RetryableRequest = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
 
-const csrfCookieName = "csrfToken";
 const portalRoleHeader = { "X-Portal-Role": "EMPLOYEE" };
 let refreshRequest: Promise<{ data: ApiResponse<AuthResponse> }> | null = null;
 
@@ -16,22 +15,12 @@ export const api = axios.create({
   headers: portalRoleHeader,
 });
 
-function readCookie(name: string) {
-  if (typeof document === "undefined") return null;
-
-  const cookie = document.cookie
-    .split("; ")
-    .find((item) => item.startsWith(`${name}=`));
-
-  return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null;
-}
-
 function isCsrfProtectedUrl(url?: string) {
   return Boolean(url?.includes("/auth/refresh-token") || url?.includes("/auth/logout"));
 }
 
 function getCsrfHeaders() {
-  const token = readCookie(csrfCookieName);
+  const token = getCsrfToken();
   return token ? { "X-CSRF-Token": token } : {};
 }
 
@@ -54,7 +43,7 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  const csrfToken = readCookie(csrfCookieName);
+  const csrfToken = getCsrfToken();
   if (csrfToken && isCsrfProtectedUrl(config.url)) {
     (config.headers as Record<string, string>)["X-CSRF-Token"] = csrfToken;
   }
