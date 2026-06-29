@@ -47,7 +47,20 @@ export const inventoryService = {
     };
   },
 
-  async updateInventory(id: string, data: { quantity?: number; status?: string }) {
+  async updateInventory(
+    id: string,
+    data: {
+      quantity?: number;
+      mrp?: number;
+      sellingPrice?: number;
+      gstPercent?: number;
+      costPrice?: number | null;
+      batchNumber?: string;
+      expiryDate?: string;
+      status?: string;
+      manufacturerName?: string;
+    },
+  ) {
     const result = await apiResult<InventoryItem>(api.patch(`/inventory/${id}`, data));
     return result.data;
   },

@@ -11,8 +11,11 @@ export type InventoryLot = {
     id: string;
     sku: string;
     name: string;
+    mrp: number;
     sellingPrice: number;
+    gstPercent: number;
     reorderLevel: number;
+    manufacturer: { id: string; name: string } | null;
   };
   supplier: {
     id: string;
@@ -23,13 +26,20 @@ export type InventoryLot = {
   quantityOnHand: number;
   quantityBlocked: number;
   availableQuantity: number;
+  costPrice: number | null;
   status: InventoryStatus;
 };
 
 export type InventoryUpdatePayload = {
   quantity?: number;
+  mrp?: number;
   sellingPrice?: number;
+  gstPercent?: number;
+  costPrice?: number | null;
+  batchNumber?: string;
   expiryDate?: string;
+  status?: InventoryStatus;
+  manufacturerName?: string;
 };
 
 export type CreateMedicineInventoryPayload = {
@@ -44,6 +54,7 @@ export type CreateMedicineInventoryPayload = {
   mrp: number;
   sellingPrice: number;
   gstPercent: number;
+  costPrice?: number;
 };
 
 export const inventoryService = {

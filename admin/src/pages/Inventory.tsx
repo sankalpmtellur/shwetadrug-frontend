@@ -11,28 +11,21 @@ const pageSize = 10;
 
 type InventoryDraft = {
   quantity: string;
+  mrp: string;
+  sellingPrice: string;
+  gstPercent: string;
+  costPrice: string;
+  batchNumber: string;
+  expiryDate: string;
+  status: string;
 };
 
 function formatCount(value: number | null | undefined) {
   return typeof value === "number" ? new Intl.NumberFormat("en-IN").format(value) : "-";
 }
 
-function formatCurrency(value: number | null | undefined) {
-  return typeof value === "number"
-    ? new Intl.NumberFormat("en-IN", {
-        currency: "INR",
-        maximumFractionDigits: 0,
-        style: "currency",
-      }).format(value)
-    : "-";
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+function toDateInputValue(value: string) {
+  return new Date(value).toISOString().slice(0, 10);
 }
 
 function isNeedsDecision(item: InventoryItem) {
@@ -73,7 +66,16 @@ export default function Inventory() {
   }, [loadInventory]);
 
   function getDraft(item: InventoryItem) {
-    return drafts[item.id] ?? { quantity: String(item.quantityOnHand) };
+    return drafts[item.id] ?? {
+      quantity: String(item.quantityOnHand),
+      mrp: String(item.medicine.mrp),
+      sellingPrice: String(item.medicine.sellingPrice),
+      gstPercent: String(item.medicine.gstPercent),
+      costPrice: item.costPrice === null ? "" : String(item.costPrice),
+      batchNumber: item.batchNumber,
+      expiryDate: toDateInputValue(item.expiryDate),
+      status: item.status,
+    };
   }
 
   function updateDraft(item: InventoryItem, draft: Partial<InventoryDraft>) {
@@ -81,6 +83,13 @@ export default function Inventory() {
       ...current,
         [item.id]: {
           quantity: current[item.id]?.quantity ?? String(item.quantityOnHand),
+          mrp: current[item.id]?.mrp ?? String(item.medicine.mrp),
+          sellingPrice: current[item.id]?.sellingPrice ?? String(item.medicine.sellingPrice),
+          gstPercent: current[item.id]?.gstPercent ?? String(item.medicine.gstPercent),
+          costPrice: current[item.id]?.costPrice ?? (item.costPrice === null ? "" : String(item.costPrice)),
+          batchNumber: current[item.id]?.batchNumber ?? item.batchNumber,
+          expiryDate: current[item.id]?.expiryDate ?? toDateInputValue(item.expiryDate),
+          status: current[item.id]?.status ?? item.status,
           ...draft,
         },
     }));
@@ -89,9 +98,33 @@ export default function Inventory() {
   async function handleInventoryUpdate(item: InventoryItem) {
     const draft = getDraft(item);
     const quantity = Number(draft.quantity);
+    const mrp = Number(draft.mrp);
+    const sellingPrice = Number(draft.sellingPrice);
+    const gstPercent = Number(draft.gstPercent);
+    const costPrice = draft.costPrice.trim() ? Number(draft.costPrice) : null;
 
     if (!Number.isInteger(quantity) || quantity < 0) {
       setActionError("Quantity must be a non-negative whole number");
+      return;
+    }
+    if (!draft.batchNumber.trim()) {
+      setActionError("Batch number is required");
+      return;
+    }
+    if (!draft.expiryDate.trim()) {
+      setActionError("Expiry date is required");
+      return;
+    }
+    if ([mrp, sellingPrice].some((value) => Number.isNaN(value) || value <= 0)) {
+      setActionError("MRP and selling price must be positive numbers");
+      return;
+    }
+    if (Number.isNaN(gstPercent) || gstPercent < 0 || gstPercent > 100) {
+      setActionError("GST must be between 0 and 100");
+      return;
+    }
+    if (costPrice !== null && (Number.isNaN(costPrice) || costPrice <= 0)) {
+      setActionError("Purchase price must be blank or a positive number");
       return;
     }
 
@@ -101,6 +134,13 @@ export default function Inventory() {
     try {
       const updated = await inventoryService.updateInventory(item.id, {
         quantity,
+        mrp,
+        sellingPrice,
+        gstPercent,
+        costPrice,
+        batchNumber: draft.batchNumber.trim(),
+        expiryDate: draft.expiryDate,
+        status: draft.status,
       });
       setItems((current) => current.map((row) => (row.id === item.id ? updated : row)));
       setDrafts((current) => {
@@ -148,17 +188,36 @@ export default function Inventory() {
         {!isLoading && !error && items.length === 0 ? <p className="text-sm font-bold text-muted">No inventory lots found.</p> : null}
 
         {!isLoading && !error && items.length > 0 ? (
-          <Table headers={["Medicine", "Batch", "Expiry", "Quantity", "MRP", "Selling/Wholesale Price", "Actions/Edit"]}>
+          <Table headers={["Medicine", "Batch", "Expiry", "Qty", "MRP", "Purchase", "Selling", "GST", "Status", "Actions/Edit"]}>
             {pageItems.map((item) => {
               const draft = getDraft(item);
               return (
                 <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
                   <Cell strong>{item.medicine.name}</Cell>
-                  <Cell>{item.batchNumber}</Cell>
-                  <Cell>{formatDate(item.expiryDate)}</Cell>
+                  <Cell>
+                    <input className="h-10 w-36 rounded-lg border border-border px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" value={draft.batchNumber} onChange={(event) => updateDraft(item, { batchNumber: event.target.value })} disabled={updatingId === item.id} />
+                  </Cell>
+                  <Cell>
+                    <input className="h-10 w-36 rounded-lg border border-border px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" type="date" value={draft.expiryDate} onChange={(event) => updateDraft(item, { expiryDate: event.target.value })} disabled={updatingId === item.id} />
+                  </Cell>
                   <Cell>{formatCount(item.availableQuantity)}</Cell>
-                  <Cell>{formatCurrency(item.medicine.mrp)}</Cell>
-                  <Cell>{formatCurrency(item.medicine.sellingPrice)}</Cell>
+                  <Cell>
+                    <input className="h-10 w-24 rounded-lg border border-border px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" type="number" min="0" value={draft.mrp} onChange={(event) => updateDraft(item, { mrp: event.target.value })} disabled={updatingId === item.id} />
+                  </Cell>
+                  <Cell>
+                    <input className="h-10 w-24 rounded-lg border border-border px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" type="number" min="0" value={draft.costPrice} onChange={(event) => updateDraft(item, { costPrice: event.target.value })} disabled={updatingId === item.id} />
+                  </Cell>
+                  <Cell>
+                    <input className="h-10 w-24 rounded-lg border border-border px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" type="number" min="0" value={draft.sellingPrice} onChange={(event) => updateDraft(item, { sellingPrice: event.target.value })} disabled={updatingId === item.id} />
+                  </Cell>
+                  <Cell>
+                    <input className="h-10 w-20 rounded-lg border border-border px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" type="number" min="0" max="100" value={draft.gstPercent} onChange={(event) => updateDraft(item, { gstPercent: event.target.value })} disabled={updatingId === item.id} />
+                  </Cell>
+                  <Cell>
+                    <select className="h-10 w-36 rounded-lg border border-border px-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" value={draft.status} onChange={(event) => updateDraft(item, { status: event.target.value })} disabled={updatingId === item.id}>
+                      {["HEALTHY", "LOW", "REORDER", "OUT_OF_STOCK", "EXPIRED", "BLOCKED"].map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}
+                    </select>
+                  </Cell>
                   <Cell>
                     <div className="grid min-w-40 gap-2 sm:flex sm:items-center">
                       <input

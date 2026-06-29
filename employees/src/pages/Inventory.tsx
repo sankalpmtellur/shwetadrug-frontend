@@ -3,12 +3,18 @@ import { PackagePlus, RefreshCcw } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Cell, Table } from "../components/common/Table";
-import { getApiErrorMessage, inventoryService, type InventoryLot } from "../services/inventoryService";
+import { getApiErrorMessage, inventoryService, type InventoryLot, type InventoryStatus } from "../services/inventoryService";
 
 const emptyForm = {
   quantity: "",
+  batchNumber: "",
+  mrp: "",
   sellingPrice: "",
+  gstPercent: "",
+  costPrice: "",
   expiryDate: "",
+  status: "HEALTHY",
+  manufacturerName: "",
 };
 
 const emptyAddForm = {
@@ -23,6 +29,7 @@ const emptyAddForm = {
   mrp: "",
   sellingPrice: "",
   gstPercent: "12",
+  costPrice: "",
 };
 
 const pageSize = 10;
@@ -84,8 +91,14 @@ export default function Inventory() {
     setSelectedItemId(item.id);
     setForm({
       quantity: String(item.quantityOnHand),
+      batchNumber: item.batchNumber,
+      mrp: String(item.medicine.mrp),
       sellingPrice: String(item.medicine.sellingPrice),
+      gstPercent: String(item.medicine.gstPercent),
+      costPrice: item.costPrice === null ? "" : String(item.costPrice),
       expiryDate: toDateInputValue(item.expiryDate),
+      status: item.status,
+      manufacturerName: item.medicine.manufacturer?.name ?? "",
     });
     setMessage(null);
   }
@@ -109,7 +122,10 @@ export default function Inventory() {
     }
 
     const quantity = Number(form.quantity);
+    const mrp = Number(form.mrp);
     const sellingPrice = Number(form.sellingPrice);
+    const gstPercent = Number(form.gstPercent);
+    const costPrice = form.costPrice.trim() ? Number(form.costPrice) : null;
 
     if (!form.quantity.trim() || Number.isNaN(quantity) || quantity < 0 || !Number.isInteger(quantity)) {
       setMessage({ tone: "error", text: "Please enter a valid non-negative whole number for quantity." });
@@ -118,6 +134,22 @@ export default function Inventory() {
 
     if (!form.sellingPrice.trim() || Number.isNaN(sellingPrice) || sellingPrice <= 0) {
       setMessage({ tone: "error", text: "Please enter a valid selling price." });
+      return;
+    }
+    if (!form.mrp.trim() || Number.isNaN(mrp) || mrp <= 0) {
+      setMessage({ tone: "error", text: "Please enter a valid MRP." });
+      return;
+    }
+    if (!form.gstPercent.trim() || Number.isNaN(gstPercent) || gstPercent < 0 || gstPercent > 100) {
+      setMessage({ tone: "error", text: "Please enter GST between 0 and 100." });
+      return;
+    }
+    if (costPrice !== null && (Number.isNaN(costPrice) || costPrice <= 0)) {
+      setMessage({ tone: "error", text: "Purchase price must be blank or a positive number." });
+      return;
+    }
+    if (!form.batchNumber.trim()) {
+      setMessage({ tone: "error", text: "Please enter a batch number." });
       return;
     }
 
@@ -131,8 +163,14 @@ export default function Inventory() {
     try {
       await inventoryService.updateInventory(selectedItem.id, {
         quantity,
+        batchNumber: form.batchNumber,
+        mrp,
         sellingPrice,
+        gstPercent,
+        costPrice,
         expiryDate: form.expiryDate,
+        status: form.status as InventoryStatus,
+        manufacturerName: form.manufacturerName || undefined,
       });
       setMessage({ tone: "success", text: `Inventory updated for batch ${selectedItem.batchNumber}.` });
       await loadInventory();
@@ -150,6 +188,7 @@ export default function Inventory() {
     const mrp = Number(addForm.mrp);
     const sellingPrice = Number(addForm.sellingPrice);
     const gstPercent = Number(addForm.gstPercent);
+    const costPrice = addForm.costPrice.trim() ? Number(addForm.costPrice) : undefined;
 
     if (!addForm.medicineName.trim() || !addForm.manufacturerName.trim() || !addForm.categoryName.trim() || !addForm.packSize.trim()) {
       setAddMessage({ tone: "error", text: "Please enter medicine name, manufacturer, category, and pack size." });
@@ -180,6 +219,10 @@ export default function Inventory() {
       setAddMessage({ tone: "error", text: "Please enter GST between 0 and 100." });
       return;
     }
+    if (costPrice !== undefined && (Number.isNaN(costPrice) || costPrice <= 0)) {
+      setAddMessage({ tone: "error", text: "Purchase price must be blank or a positive number." });
+      return;
+    }
 
     setIsAdding(true);
 
@@ -196,6 +239,7 @@ export default function Inventory() {
         mrp,
         sellingPrice,
         gstPercent,
+        costPrice,
       });
       setAddMessage({ tone: "success", text: `${createdItem.medicine.name} batch ${createdItem.batchNumber} added to inventory.` });
       setAddForm(emptyAddForm);
@@ -203,8 +247,14 @@ export default function Inventory() {
       setSelectedItemId(createdItem.id);
       setForm({
         quantity: String(createdItem.quantityOnHand),
+        batchNumber: createdItem.batchNumber,
+        mrp: String(createdItem.medicine.mrp),
         sellingPrice: String(createdItem.medicine.sellingPrice),
+        gstPercent: String(createdItem.medicine.gstPercent),
+        costPrice: createdItem.costPrice === null ? "" : String(createdItem.costPrice),
         expiryDate: toDateInputValue(createdItem.expiryDate),
+        status: createdItem.status,
+        manufacturerName: createdItem.medicine.manufacturer?.name ?? "",
       });
     } catch (addError) {
       setAddMessage({ tone: "error", text: getApiErrorMessage(addError) });
@@ -253,6 +303,7 @@ export default function Inventory() {
               <Input label="MRP" type="number" value={addForm.mrp} onChange={(value) => updateAddField("mrp", value)} placeholder="150" />
               <Input label="Selling/wholesale price" type="number" value={addForm.sellingPrice} onChange={(value) => updateAddField("sellingPrice", value)} placeholder="120" />
             </div>
+            <Input label="Purchase price" type="number" value={addForm.costPrice} onChange={(value) => updateAddField("costPrice", value)} placeholder="Optional" />
             {addMessage ? (
               <div className={`rounded-lg px-3 py-2 text-sm font-semibold ${addMessage.tone === "error" ? "bg-red-50 text-error" : "bg-emerald-50 text-success"}`}>
                 {addMessage.text}
@@ -271,12 +322,21 @@ export default function Inventory() {
             <Input label="Medicine name" value={selectedItem?.medicine.name ?? ""} placeholder="Select from table" readOnly />
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="SKU" value={selectedItem?.medicine.sku ?? ""} placeholder="Select from table" readOnly />
-              <Input label="Batch number" value={selectedItem?.batchNumber ?? ""} placeholder="Select from table" readOnly />
+              <Input label="Batch number" value={form.batchNumber} onChange={(value) => updateField("batchNumber", value)} placeholder="Batch" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Quantity on hand" type="number" value={form.quantity} onChange={(value) => updateField("quantity", value)} placeholder="500" />
               <Input label="Selling price" type="number" value={form.sellingPrice} onChange={(value) => updateField("sellingPrice", value)} placeholder="128" />
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="MRP" type="number" value={form.mrp} onChange={(value) => updateField("mrp", value)} placeholder="150" />
+              <Input label="Purchase price" type="number" value={form.costPrice} onChange={(value) => updateField("costPrice", value)} placeholder="Optional" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="GST %" type="number" value={form.gstPercent} onChange={(value) => updateField("gstPercent", value)} placeholder="12" />
+              <Select label="Status" value={form.status} onChange={(value) => updateField("status", value)} />
+            </div>
+            <Input label="Manufacturer" value={form.manufacturerName} onChange={(value) => updateField("manufacturerName", value)} placeholder="Manufacturer" />
             <Input label="Expiry date" type="date" value={form.expiryDate} onChange={(value) => updateField("expiryDate", value)} placeholder="2027-12-31" />
             {message ? (
               <div className={`rounded-lg px-3 py-2 text-sm font-semibold ${message.tone === "error" ? "bg-red-50 text-error" : "bg-emerald-50 text-success"}`}>
@@ -310,13 +370,14 @@ export default function Inventory() {
           ) : null}
 
         {!isLoading && !error && items.length > 0 ? (
-          <Table headers={["Medicine", "SKU", "Batch", "Qty", "Price", "Expiry", "Action"]}>
+          <Table headers={["Medicine", "SKU", "Batch", "Qty", "MRP", "Price", "Expiry", "Action"]}>
               {pageItems.map((item) => (
                 <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
                   <Cell strong>{item.medicine.name}</Cell>
                   <Cell>{item.medicine.sku}</Cell>
                   <Cell>{item.batchNumber}</Cell>
                   <Cell>{item.quantityOnHand}</Cell>
+                  <Cell>{formatCurrency(item.medicine.mrp)}</Cell>
                   <Cell>{formatCurrency(item.medicine.sellingPrice)}</Cell>
                   <Cell>{formatDate(item.expiryDate)}</Cell>
                   <Cell>
@@ -401,6 +462,23 @@ function Input({
         readOnly={readOnly}
         className="h-11 w-full rounded-lg border border-border px-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 read-only:bg-surface-soft"
       />
+    </label>
+  );
+}
+
+function Select({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-bold text-navy">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 w-full rounded-lg border border-border px-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+      >
+        {["HEALTHY", "LOW", "REORDER", "OUT_OF_STOCK", "EXPIRED", "BLOCKED"].map((status) => (
+          <option key={status} value={status}>{status.replaceAll("_", " ")}</option>
+        ))}
+      </select>
     </label>
   );
 }
