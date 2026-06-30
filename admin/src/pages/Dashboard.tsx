@@ -142,11 +142,11 @@ export default function Dashboard() {
             />
             <Metric
               icon={<UsersRound />}
-              label="Pending Approvals"
-              value={formatCount(valueOrZero(dashboard?.pendingRetailerApprovals))}
-              hint="Retailers awaiting review"
+              label="New Retailers"
+              value={formatCount(valueOrZero(dashboard?.newRetailersThisMonth))}
+              hint="Registered this month"
               onClick={() => navigate("/retailers")}
-              tone="orange"
+              tone="green"
             />
             <Metric
               icon={<Store />}

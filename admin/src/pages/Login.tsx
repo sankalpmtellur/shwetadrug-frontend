@@ -41,7 +41,7 @@ export default function Login() {
           </div>
           <div className="mt-5 grid gap-3">
             <LoginFeature icon={<BarChart3 className="h-5 w-5" />} label="Business overview" />
-            <LoginFeature icon={<Building2 className="h-5 w-5" />} label="Retailer approvals" />
+            <LoginFeature icon={<Building2 className="h-5 w-5" />} label="Retailer management" />
             <LoginFeature icon={<ShieldCheck className="h-5 w-5" />} label="Inventory governance" />
           </div>
         </section>

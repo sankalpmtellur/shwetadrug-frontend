@@ -3,7 +3,6 @@ import { BarChart3, Boxes, Building2, LogOut, Menu, Pill, ShieldAlert, ShoppingB
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { inventoryService } from "../../services/inventoryService";
-import { retailerService } from "../../services/retailerService";
 import { Button } from "../common/Button";
 
 const links = [
@@ -11,7 +10,7 @@ const links = [
   { to: "/medicines", label: "Medicines", icon: Pill },
   { to: "/inventory", label: "Inventory", icon: Boxes },
   { to: "/expiry", label: "Expiry Management", icon: ShieldAlert, badge: "expiry" },
-  { to: "/retailers", label: "Retailers", icon: Building2, badge: "retailers" },
+  { to: "/retailers", label: "Retailers", icon: Building2 },
   { to: "/orders", label: "Orders", icon: ShoppingBag },
 ];
 
@@ -20,27 +19,23 @@ export const ADMIN_BADGES_REFRESH_EVENT = "sdd-admin-badges-refresh";
 export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boolean) => void }) {
   const navigate = useNavigate();
   const { isLoading, logout } = useAuth();
-  const [badges, setBadges] = useState({ retailers: 0, expiry: 0 });
+  const [badges, setBadges] = useState({ expiry: 0 });
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadBadges() {
       try {
-        const [retailerResult, expiryResult] = await Promise.all([
-          retailerService.getRetailers(),
-          inventoryService.getExpiringInventory(60),
-        ]);
+        const expiryResult = await inventoryService.getExpiringInventory(60);
 
         if (!isMounted) return;
 
         setBadges({
-          retailers: retailerResult.items.filter((row) => needsRetailerAction(row.status)).length,
           expiry: expiryResult.items.length,
         });
       } catch {
         if (isMounted) {
-          setBadges({ retailers: 0, expiry: 0 });
+          setBadges({ expiry: 0 });
         }
       }
     }
@@ -123,8 +118,4 @@ export function Sidebar({ open, setOpen }: { open: boolean; setOpen: (value: boo
       ) : null}
     </>
   );
-}
-
-function needsRetailerAction(status: string) {
-  return status === "PENDING_VERIFICATION" || status === "REVIEW";
 }

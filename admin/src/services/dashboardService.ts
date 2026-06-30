@@ -3,7 +3,7 @@ import { api, apiRequest } from "../lib/api";
 export type AdminDashboard = {
   totalRetailers?: number | null;
   activeRetailers?: number | null;
-  pendingRetailerApprovals?: number | null;
+  newRetailersThisMonth?: number | null;
   totalMedicines?: number | null;
   inventoryCount?: number | null;
   totalOrders?: number | null;

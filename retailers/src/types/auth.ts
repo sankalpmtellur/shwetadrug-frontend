@@ -39,6 +39,8 @@ export type RetailerSignupPayload = {
   city: string;
   state: string;
   pincode: string;
+  password: string;
+  confirmPassword: string;
 };
 
 export type ForgotPasswordPayload = {

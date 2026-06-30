@@ -44,7 +44,7 @@ export const retailerService = {
     };
   },
 
-  updateRetailerStatus(id: string, status: string, temporaryPassword?: string) {
-    return apiResult<RetailerAccount>(api.patch(`/retailers/${id}`, { status, temporaryPassword }));
+  updateRetailerStatus(id: string, status: string) {
+    return apiResult<RetailerAccount>(api.patch(`/retailers/${id}`, { status }));
   },
 };

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { AuthLayout } from "../layouts/AuthLayout";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
@@ -16,11 +17,16 @@ const initialForm = {
   city: "",
   state: "",
   pincode: "",
+  password: "",
+  confirmPassword: "",
 };
 
 export default function Signup() {
   const [form, setForm] = useState(initialForm);
   const [addressError, setAddressError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -28,6 +34,9 @@ export default function Signup() {
     setForm((current) => ({ ...current, [field]: value }));
     if (field === "address") {
       setAddressError("");
+    }
+    if (field === "password" || field === "confirmPassword") {
+      setPasswordError("");
     }
   }
 
@@ -47,6 +56,18 @@ export default function Signup() {
       return;
     }
 
+    if (form.password.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      toast.error("Passwords do not match.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -60,8 +81,10 @@ export default function Signup() {
         city: form.city.trim(),
         state: form.state.trim(),
         pincode: form.pincode.trim(),
+        password: form.password,
+        confirmPassword: form.confirmPassword,
       });
-      toast.success("Signup submitted. Please wait for admin approval.");
+      toast.success("Your account has been created successfully.");
       navigate("/login", { replace: true });
     } catch {
       toast.error("Could not create account");
@@ -71,7 +94,7 @@ export default function Signup() {
   }
 
   return (
-    <AuthLayout title="Create retailer account" subtitle="Submit your pharmacy details for admin approval.">
+    <AuthLayout title="Create retailer account" subtitle="Create your account and start ordering medicines.">
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block text-sm font-semibold text-navy">
           Owner Name
@@ -122,12 +145,61 @@ export default function Signup() {
           </label>
         </div>
 
-        <div className="rounded-lg border border-primary/20 bg-surface-soft p-4 text-sm font-semibold leading-6 text-muted">
-          After submitting your signup request, admin approval is required. Please wait for approval. Once approved, you will receive your login details by phone message or registered email.
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-semibold text-navy">
+            Password
+            <div className="relative mt-2">
+              <Input
+                className="pr-11"
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={(event) => updateField("password", event.target.value)}
+                placeholder="Minimum 8 characters"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                aria-invalid={Boolean(passwordError)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition hover:text-primary"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+          </label>
+          <label className="block text-sm font-semibold text-navy">
+            Confirm Password
+            <div className="relative mt-2">
+              <Input
+                className="pr-11"
+                type={showConfirmPassword ? "text" : "password"}
+                value={form.confirmPassword}
+                onChange={(event) => updateField("confirmPassword", event.target.value)}
+                placeholder="Re-enter password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                aria-invalid={Boolean(passwordError)}
+                aria-describedby={passwordError ? "signup-password-error" : undefined}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((value) => !value)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition hover:text-primary"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+          </label>
         </div>
+        {passwordError ? <span id="signup-password-error" className="block text-xs font-semibold text-error">{passwordError}</span> : null}
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Submitting request..." : "Submit Signup Request"}
+          {isLoading ? "Creating account..." : "Create Account"}
         </Button>
       </form>
 
