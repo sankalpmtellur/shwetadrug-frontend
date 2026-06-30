@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download, FileText, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
@@ -221,48 +221,81 @@ export default function OrderHistory() {
 
         <Modal
           open={Boolean(selectedOrder)}
-          title={selectedOrder ? `Bill ${selectedOrder.orderNo}` : "Bill"}
+          title="Invoice Preview"
           onClose={() => setSelectedOrderId(null)}
         >
           {selectedOrder ? (
-            <div className="space-y-3 sm:space-y-4">
-              <div className="rounded-lg bg-surface-soft p-3 sm:rounded-xl sm:p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted">
-                  Order Date
-                </p>
-                <p className="mt-1 font-black text-navy">{formatDate(selectedOrder.placedAt)}</p>
-                <p className="mt-1 text-sm font-semibold text-muted">
-                  {selectedOrder.items.length} items
-                </p>
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border bg-surface-soft p-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-primary">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-widest text-muted">Order Number</p>
+                      <h3 className="mt-1 text-xl font-black text-navy">{selectedOrder.orderNo}</h3>
+                      <p className="mt-1 text-sm font-semibold text-muted">{formatDate(selectedOrder.placedAt)} · {selectedOrder.items.length} items</p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-white px-4 py-3 text-left sm:text-right">
+                    <p className="text-xs font-black uppercase tracking-widest text-muted">Invoice</p>
+                    <p className="mt-1 font-black text-primary">{invoice?.invoice.invoiceNo ?? selectedOrder.invoice?.invoiceNo ?? "Loading..."}</p>
+                    <p className="mt-1 text-xs font-semibold text-muted">{invoice?.invoice.status ?? selectedOrder.invoice?.status ?? selectedOrder.status}</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border sm:rounded-xl">
+              {isInvoiceLoading ? <p className="rounded-lg bg-surface-soft px-4 py-3 text-sm font-semibold text-muted">Loading invoice details...</p> : null}
+
+              <div className="overflow-hidden rounded-lg border border-border">
+                <div className="hidden grid-cols-[minmax(0,1fr)_80px_110px] gap-3 bg-surface-soft px-4 py-3 text-xs font-black uppercase tracking-widest text-muted sm:grid">
+                  <span>Medicine</span>
+                  <span className="text-right">Qty</span>
+                  <span className="text-right">Amount</span>
+                </div>
+                <div className="divide-y divide-border">
                 {(invoice?.items ?? selectedOrder.items).map((item) => {
                   const name = "medicine" in item ? item.medicine.name : item.medicineName;
+                  const sku = "medicine" in item ? item.medicine.sku : item.sku;
                   const quantity = "medicine" in item ? item.quantity : item.quantity;
                   const price = "medicine" in item ? item.lineTotal : item.lineTotal;
 
-                  return <div key={item.id} className="grid gap-2 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3 sm:p-4">
-                    <div className="min-w-0">
-                      <p className="break-words font-bold leading-5 text-navy">{name}</p>
-                      <p className="text-sm text-muted">Quantity: {quantity}</p>
+                  return (
+                    <div key={item.id} className="grid gap-2 p-4 sm:grid-cols-[minmax(0,1fr)_80px_110px] sm:items-center sm:gap-3">
+                      <div className="min-w-0">
+                        <p className="break-words font-bold leading-5 text-navy">{name}</p>
+                        <p className="mt-1 text-xs font-semibold text-muted">SKU: {sku}</p>
+                      </div>
+                      <p className="text-sm font-black text-muted sm:text-right">Qty {quantity}</p>
+                      <p className="font-black text-primary sm:text-right">{currency(price)}</p>
                     </div>
-                    <p className="text-right font-black text-primary sm:text-left">{currency(price)}</p>
-                  </div>;
+                  );
                 })}
+                </div>
               </div>
 
-              {isInvoiceLoading ? <p className="text-sm font-semibold text-muted">Loading invoice details...</p> : null}
-
-              <div className="flex flex-col gap-1 rounded-lg bg-primary px-4 py-3 text-white sm:flex-row sm:items-center sm:justify-between sm:rounded-xl">
-                <span className="font-bold">Total</span>
-                <span className="text-lg font-black">{currency(invoice?.order.totalAmount ?? selectedOrder.totalAmount)}</span>
+              <div className="grid gap-3 sm:grid-cols-[1fr_280px]">
+                <div className="rounded-lg border border-border bg-surface-soft p-4">
+                  <p className="text-xs font-black uppercase tracking-widest text-muted">Payment Status</p>
+                  <p className="mt-2 text-sm font-bold text-navy">{selectedOrder.status.replaceAll("_", " ")}</p>
+                  <p className="mt-1 text-sm text-muted">Download the official invoice PDF for tax and accounting records.</p>
+                </div>
+                <div className="rounded-lg border border-primary/20 bg-white p-4">
+                  <SummaryRow label="Subtotal" value={currency(invoice?.order.subtotal ?? selectedOrder.totalAmount)} />
+                  <SummaryRow label="GST" value={currency(invoice?.order.gstAmount ?? 0)} />
+                  <div className="mt-3 border-t border-border pt-3">
+                    <SummaryRow label="Total" value={currency(invoice?.order.totalAmount ?? selectedOrder.totalAmount)} strong />
+                  </div>
+                </div>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button type="button" variant="secondary" onClick={downloadInvoice} disabled={isDownloadingInvoice || isSharingInvoice}>
+                  <Download className="h-4 w-4" />
                   {isDownloadingInvoice ? "Downloading..." : "Download Invoice"}
                 </Button>
                 <Button type="button" onClick={shareInvoice} disabled={isDownloadingInvoice || isSharingInvoice}>
+                  <Share2 className="h-4 w-4" />
                   {isSharingInvoice ? "Preparing..." : "Share PDF"}
                 </Button>
               </div>
@@ -271,6 +304,15 @@ export default function OrderHistory() {
         </Modal>
       </PageWrapper>
     </DashboardLayout>
+  );
+}
+
+function SummaryRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between gap-3 ${strong ? "text-base font-black text-navy" : "text-sm font-semibold text-muted"}`}>
+      <span>{label}</span>
+      <span className={strong ? "text-primary" : "text-navy"}>{value}</span>
+    </div>
   );
 }
 
