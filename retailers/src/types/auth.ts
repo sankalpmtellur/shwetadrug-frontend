@@ -41,6 +41,21 @@ export type RetailerSignupPayload = {
   pincode: string;
   password: string;
   confirmPassword: string;
+  otpVerificationToken: string;
+};
+
+export type SignupOtpRequestPayload = {
+  phone: string;
+};
+
+export type SignupOtpVerifyPayload = {
+  phone: string;
+  otp: string;
+};
+
+export type SignupOtpVerifyResponse = {
+  verificationToken: string;
+  expiresInSeconds: number;
 };
 
 export type ForgotPasswordPayload = {

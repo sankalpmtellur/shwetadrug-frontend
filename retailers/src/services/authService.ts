@@ -6,6 +6,9 @@ import type {
   LoginPayload,
   ResetPasswordPayload,
   RetailerSignupPayload,
+  SignupOtpRequestPayload,
+  SignupOtpVerifyPayload,
+  SignupOtpVerifyResponse,
 } from "../types/auth";
 
 let refreshPromise: Promise<AuthResponse> | null = null;
@@ -30,6 +33,16 @@ export const authService = {
   async retailerSignup(payload: RetailerSignupPayload) {
     const response = await api.post("/auth/retailer-signup", payload);
     return response.data;
+  },
+
+  async requestSignupOtp(payload: SignupOtpRequestPayload) {
+    const response = await api.post("/auth/signup/request-otp", payload);
+    return response.data;
+  },
+
+  async verifySignupOtp(payload: SignupOtpVerifyPayload) {
+    const response = await api.post<ApiResponse<SignupOtpVerifyResponse>>("/auth/signup/verify-otp", payload);
+    return response.data.data;
   },
 
   async forgotPassword(payload: ForgotPasswordPayload) {
