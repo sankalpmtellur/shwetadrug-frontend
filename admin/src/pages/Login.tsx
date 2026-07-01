@@ -31,94 +31,128 @@ export default function Login() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f6f8fc] px-4 py-8">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1fr_.95fr]">
-        <section className="hidden rounded-lg border border-blue-100 bg-white p-8 shadow-xl shadow-slate-200/70 lg:block">
-          <div className="rounded-lg bg-primary px-6 py-7 text-white shadow-lg shadow-primary/20">
-            <p className="text-xs font-black uppercase tracking-widest text-white/75">Owner Console</p>
-            <h1 className="mt-3 text-4xl font-black leading-tight">Control room for the distribution business.</h1>
-            <p className="mt-4 text-sm font-semibold leading-6 text-white/80">Monitor orders, inventory, retailers, and expiry risk from a cleaner admin workspace.</p>
+    <main className="grid min-h-screen grid-cols-1 bg-slate-50 lg:grid-cols-2">
+      <section className="relative hidden flex-col justify-between bg-gradient-to-br from-primary to-blue-900 p-12 text-white lg:flex">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] bg-[size:24px_24px]" />
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 font-semibold uppercase tracking-wider text-white/90">
+            <BarChart3 className="h-6 w-6 text-blue-300" />
+            <span>Owner Console</span>
           </div>
-          <div className="mt-5 grid gap-3">
+        </div>
+
+        <div className="relative z-10 max-w-xl space-y-8">
+          <div className="space-y-4">
+            <h1 className="text-4xl font-extrabold tracking-tight xl:text-5xl">
+              Control room for the <br />distribution business.
+            </h1>
+            <p className="text-base text-blue-100/80 leading-relaxed">
+              Monitor orders, inventory, retailers, and expiry risk from a cleaner admin workspace.
+            </p>
+          </div>
+
+          <div className="space-y-3">
             <LoginFeature icon={<BarChart3 className="h-5 w-5" />} label="Business overview" />
             <LoginFeature icon={<Building2 className="h-5 w-5" />} label="Retailer management" />
             <LoginFeature icon={<ShieldCheck className="h-5 w-5" />} label="Inventory governance" />
           </div>
-        </section>
+        </div>
+      </section>
 
-        <div className="w-full rounded-lg border border-border bg-white p-6 shadow-xl shadow-slate-200/70 md:p-8">
-          <div>
-            <div className="mb-5 grid h-12 w-12 place-items-center rounded-lg bg-surface-strong text-primary">
+      <section className="flex items-center justify-center p-6 sm:p-12 md:p-24">
+        <div className="w-full max-w-md space-y-8">
+          <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <LockKeyhole className="h-6 w-6" />
             </div>
-            <p className="text-xs font-black uppercase tracking-widest text-primary">Admin Portal</p>
-            <h1 className="mt-2 text-3xl font-black text-navy">Welcome</h1>
-            <p className="mt-2 text-sm text-muted">Sign in to manage Shweta Drug Distributors.</p>
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Admin Portal
+            </span>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+              Welcome
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Sign in to manage Shweta Drug Distributors.
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold text-navy">Email</span>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Email Address
+              </label>
               <input
-                className="h-12 w-full rounded-lg border border-border px-4 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                placeholder="Enter email"
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                placeholder="Enter email"
                 autoComplete="email"
                 disabled={isLoading}
+                required
+                className="block h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-70"
               />
-            </label>
+            </div>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold text-navy">Password</span>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">
+                Password
+              </label>
               <div className="relative">
                 <input
-                  className="h-12 w-full rounded-lg border border-border px-4 pr-12 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-                  placeholder="Enter password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter password"
                   autoComplete="current-password"
                   disabled={isLoading}
+                  required
+                  className="block h-12 w-full rounded-xl border border-slate-200 bg-white px-4 pr-12 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-70"
                 />
                 <button
                   type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted"
                   onClick={() => setShowPassword((current) => !current)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
                   disabled={isLoading}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition disabled:opacity-50"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
                 </button>
               </div>
-            </label>
+            </div>
 
             {error ? (
-              <p className="rounded-lg border border-error/20 bg-red-50 px-4 py-3 text-sm font-bold text-error">
+              <div className="flex items-center gap-2 rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600 border border-red-100">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-600 shrink-0" />
                 {error}
-              </p>
+              </div>
             ) : null}
 
             <button
-              className="h-12 w-full rounded-lg bg-primary text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
               type="submit"
               disabled={isLoading || !email.trim() || !password}
+              className="flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold text-white shadow-md shadow-primary/10 transition hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isLoading ? "Logging in..." : "Login"}
             </button>
           </form>
         </div>
-      </div>
+      </section>
     </main>
   );
 }
 
 function LoginFeature({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-soft p-4">
-      <div className="grid h-10 w-10 place-items-center rounded-lg bg-white text-primary">{icon}</div>
-      <p className="text-sm font-black text-navy">{label}</p>
+    <div className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition hover:bg-white/10">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">
+        {icon}
+      </div>
+      <p className="text-sm font-medium text-white">{label}</p>
     </div>
   );
 }

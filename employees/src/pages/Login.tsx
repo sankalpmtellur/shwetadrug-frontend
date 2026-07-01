@@ -70,7 +70,7 @@ export default function Login() {
                             Welcome back
                         </h2>
                         <p className="mt-2 text-sm text-slate-500">
-                            Sign in to manage daily warehouse operations.
+                            Sign in to manage daily operations.
                         </p>
                     </div>
 
