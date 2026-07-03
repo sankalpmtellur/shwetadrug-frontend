@@ -12,7 +12,7 @@ function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-slate-900 antialiased selection:bg-blue-500/10 selection:text-blue-600 font-sans">
+    <main className="h-screen overflow-hidden bg-white text-slate-900 antialiased selection:bg-blue-500/10 selection:text-blue-600 font-sans">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 h-16 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
