@@ -48,6 +48,14 @@ if (typeof window !== "undefined") {
   localStorage.removeItem(legacyAccessTokenKey);
 }
 
+function getApiBaseUrl() {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:5001/api/v1" : undefined);
+  if (!apiBaseUrl) {
+    throw new Error("VITE_API_BASE_URL is required for production builds.");
+  }
+  return apiBaseUrl;
+}
+
 export const tokenStorage = {
   get() {
     return accessToken;
@@ -70,7 +78,7 @@ export const tokenStorage = {
 };
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

@@ -9,8 +9,16 @@ type RetryableRequest = InternalAxiosRequestConfig & {
 const portalRoleHeader = { "X-Portal-Role": "RETAILER" };
 let refreshRequest: Promise<{ data: ApiResponse<AuthResponse> }> | null = null;
 
+function getApiBaseUrl() {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:5001/api/v1" : undefined);
+  if (!apiBaseUrl) {
+    throw new Error("VITE_API_BASE_URL is required for production builds.");
+  }
+  return apiBaseUrl;
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api/v1",
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
   headers: portalRoleHeader,
 });
