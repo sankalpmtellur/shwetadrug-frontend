@@ -74,17 +74,14 @@ export default function Expiry() {
         ) : null}
 
         {!isLoading && !error && alerts.length > 0 ? (
-          <Table headers={["Medicine", "SKU", "Batch", "Expiry", "Status", "Quantity"]}>
+          <Table headers={["Medicine", "SKU", "Batch", "Expiry", "Quantity"]}>
             {alerts.map((item) => {
-              const daysRemaining = getDaysRemaining(item.expiryDate);
-
               return (
                 <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
                   <Cell strong>{item.medicine.name}</Cell>
                   <Cell>{item.medicine.sku}</Cell>
                   <Cell>{item.batchNumber}</Cell>
                   <Cell>{formatDate(item.expiryDate)}</Cell>
-                  <Cell><ExpiryBadge daysRemaining={daysRemaining} status={item.status} /></Cell>
                   <Cell>{item.availableQuantity}</Cell>
                 </tr>
               );
@@ -95,25 +92,6 @@ export default function Expiry() {
       </Card>
     </section>
   );
-}
-
-function getDaysRemaining(value: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiryDate = new Date(value);
-  expiryDate.setHours(0, 0, 0, 0);
-  return Math.ceil((expiryDate.getTime() - today.getTime()) / 86_400_000);
-}
-
-function ExpiryBadge({ daysRemaining, status }: { daysRemaining: number; status: string }) {
-  const label = status === "EXPIRED" || daysRemaining < 0 ? "Expired" : daysRemaining <= 30 ? "Expiring Soon" : "Safe";
-  const className = label === "Expired"
-    ? "bg-red-50 text-error"
-    : label === "Expiring Soon"
-      ? "bg-amber-50 text-warning"
-      : "bg-emerald-50 text-success";
-
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${className}`}>{label}</span>;
 }
 
 function formatDate(value: string) {

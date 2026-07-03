@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import heroImage from "../assets/home-hero.png";
+import heroImage from "../assets/home-hero.webp";
 
 function Home() {
   return (

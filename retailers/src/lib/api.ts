@@ -16,7 +16,7 @@ export const api = axios.create({
 });
 
 function isCsrfProtectedUrl(url?: string) {
-  return Boolean(url?.includes("/auth/refresh-token") || url?.includes("/auth/logout"));
+  return Boolean(url?.includes("/auth/logout"));
 }
 
 function getCsrfHeaders() {

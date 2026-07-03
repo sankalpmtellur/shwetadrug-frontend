@@ -3,7 +3,7 @@ import { PackagePlus, RefreshCcw } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Cell, Table } from "../components/common/Table";
-import { getApiErrorMessage, inventoryService, type InventoryLot, type InventoryStatus } from "../services/inventoryService";
+import { getApiErrorMessage, inventoryService, type InventoryLot } from "../services/inventoryService";
 
 const emptyForm = {
   quantity: "",
@@ -13,7 +13,6 @@ const emptyForm = {
   gstPercent: "",
   costPrice: "",
   expiryDate: "",
-  status: "HEALTHY",
   manufacturerName: "",
 };
 
@@ -97,7 +96,6 @@ export default function Inventory() {
       gstPercent: String(item.medicine.gstPercent),
       costPrice: item.costPrice === null ? "" : String(item.costPrice),
       expiryDate: toDateInputValue(item.expiryDate),
-      status: item.status,
       manufacturerName: item.medicine.manufacturer?.name ?? "",
     });
     setMessage(null);
@@ -169,7 +167,6 @@ export default function Inventory() {
         gstPercent,
         costPrice,
         expiryDate: form.expiryDate,
-        status: form.status as InventoryStatus,
         manufacturerName: form.manufacturerName || undefined,
       });
       setMessage({ tone: "success", text: `Inventory updated for batch ${selectedItem.batchNumber}.` });
@@ -253,7 +250,6 @@ export default function Inventory() {
         gstPercent: String(createdItem.medicine.gstPercent),
         costPrice: createdItem.costPrice === null ? "" : String(createdItem.costPrice),
         expiryDate: toDateInputValue(createdItem.expiryDate),
-        status: createdItem.status,
         manufacturerName: createdItem.medicine.manufacturer?.name ?? "",
       });
     } catch (addError) {
@@ -334,10 +330,9 @@ export default function Inventory() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="GST %" type="number" value={form.gstPercent} onChange={(value) => updateField("gstPercent", value)} placeholder="12" />
-              <Select label="Status" value={form.status} onChange={(value) => updateField("status", value)} />
+              <Input label="Expiry date" type="date" value={form.expiryDate} onChange={(value) => updateField("expiryDate", value)} placeholder="2027-12-31" />
             </div>
             <Input label="Manufacturer" value={form.manufacturerName} onChange={(value) => updateField("manufacturerName", value)} placeholder="Manufacturer" />
-            <Input label="Expiry date" type="date" value={form.expiryDate} onChange={(value) => updateField("expiryDate", value)} placeholder="2027-12-31" />
             {message ? (
               <div className={`rounded-lg px-3 py-2 text-sm font-semibold ${message.tone === "error" ? "bg-red-50 text-error" : "bg-emerald-50 text-success"}`}>
                 {message.text}
@@ -462,23 +457,6 @@ function Input({
         readOnly={readOnly}
         className="h-11 w-full rounded-lg border border-border px-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 read-only:bg-surface-soft"
       />
-    </label>
-  );
-}
-
-function Select({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-bold text-navy">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-lg border border-border px-3 text-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
-      >
-        {["HEALTHY", "LOW", "REORDER", "OUT_OF_STOCK", "EXPIRED", "BLOCKED"].map((status) => (
-          <option key={status} value={status}>{status.replaceAll("_", " ")}</option>
-        ))}
-      </select>
     </label>
   );
 }
