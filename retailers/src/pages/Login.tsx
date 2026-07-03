@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthLayout } from "../layouts/AuthLayout";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { saveAuth, clearAuth } from "../lib/auth";
 import { authService } from "../services/authService";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +15,11 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
+  if (!isAuthLoading && isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,7 +82,7 @@ export default function Login() {
           </div>
         </label>
 
-        <Button className="mt-2 w-full" type="submit" disabled={isLoading}>
+        <Button className="mt-2 w-full" type="submit" disabled={isLoading || isAuthLoading}>
           {isLoading ? "Logging in..." : "Login to portal"}
         </Button>
       </form>

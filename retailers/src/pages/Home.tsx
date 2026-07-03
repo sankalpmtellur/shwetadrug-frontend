@@ -1,8 +1,16 @@
 import { Link } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import heroImage from "../assets/home-hero.webp";
+import { useAuth } from "../hooks/useAuth";
 
 function Home() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (!isLoading && isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <main className="min-h-screen bg-white text-slate-900 antialiased selection:bg-blue-500/10 selection:text-blue-600 font-sans">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">

@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Boxes, ClipboardCheck, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
@@ -10,7 +10,11 @@ export default function Login() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { isAuthenticated, isLoading: isAuthLoading, login } = useAuth();
+
+    if (!isAuthLoading && isAuthenticated) {
+        return <Navigate to="/dashboard" replace />;
+    }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -126,7 +130,7 @@ export default function Login() {
 
                         <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isLoading || isAuthLoading}
                             className="flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold text-white shadow-md shadow-primary/10 transition hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-70"
                         >
                             {isLoading ? "Logging in..." : "Login to Dashboard"}
