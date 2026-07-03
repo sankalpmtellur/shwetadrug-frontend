@@ -47,7 +47,7 @@ export function Navbar() {
       toast.error("Logged out locally. Server logout could not be confirmed.");
     } finally {
       setProfileOpen(false);
-      navigate("/login", { replace: true });
+      navigate("/", { replace: true });
     }
   }
 
