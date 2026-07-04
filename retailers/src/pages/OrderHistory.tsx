@@ -277,9 +277,8 @@ export default function OrderHistory() {
 
               <div className="grid gap-3 sm:grid-cols-[1fr_280px]">
                 <div className="rounded-lg border border-border bg-surface-soft p-4">
-                  <p className="text-xs font-black uppercase tracking-widest text-muted">Payment Status</p>
-                  <p className="mt-2 text-sm font-bold text-navy">{selectedOrder.status.replaceAll("_", " ")}</p>
-                  <p className="mt-1 text-sm text-muted">Download the official invoice PDF for tax and accounting records.</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-muted">Invoice Actions</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-muted">Download the official invoice PDF for tax and accounting records.</p>
                 </div>
                 <div className="rounded-lg border border-primary/20 bg-white p-4">
                   <SummaryRow label="Subtotal" value={currency(invoice?.order.subtotal ?? selectedOrder.totalAmount)} />

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Building2, CheckCircle2, Eye, EyeOff, IdCard, LockKeyhole, Mail, MapPin, Phone, Save, Store, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CheckCircle2, Eye, EyeOff, IdCard, LockKeyhole, Mail, MapPin, Save, Store, UserRound } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Input } from "../components/common/Input";
@@ -145,10 +145,10 @@ export default function Profile() {
 
         {!isLoading && !errorMessage && profile ? (
           <>
-            <section className="rounded-lg border border-border bg-white p-5 shadow-sm sm:p-6">
+            <section className="rounded-lg border border-border bg-white p-4 shadow-sm sm:p-6">
               <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-primary text-white sm:h-16 sm:w-16">
+                <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-primary text-white sm:h-16 sm:w-16">
                     <Store className="h-7 w-7" />
                   </div>
                   <div className="min-w-0">
@@ -156,16 +156,16 @@ export default function Profile() {
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       {profile.retailer?.status ?? "Retailer"}
                     </p>
-                    <h1 className="mt-2 break-words text-2xl font-black text-navy sm:text-3xl">{profile.retailer?.pharmacyName ?? profile.name}</h1>
-                    <p className="mt-1 text-sm font-semibold text-muted">{formatDefaultAddress(defaultAddress)}</p>
+                    <h1 className="mt-2 break-words text-xl font-black text-navy sm:text-3xl">{profile.retailer?.pharmacyName ?? profile.name}</h1>
+                    <p className="mt-1 break-words text-sm font-semibold text-muted">{profile.name}</p>
                   </div>
                 </div>
               </div>
             </section>
 
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
               <div className="space-y-5">
-                <ProfileSection title="Personal Information" description="Owner contact details used for account communication." icon={<UserRound className="h-5 w-5" />}>
+                <ProfileSection title="Personal Information" icon={<UserRound className="h-5 w-5" />}>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Owner Name">
                       <Input value={profileForm.name} onChange={(event) => setProfileForm((current) => ({ ...current, name: event.target.value }))} />
@@ -173,16 +173,21 @@ export default function Profile() {
                     <Field label="Mobile Number">
                       <Input value={profileForm.phone} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value.replace(/\D/g, "").slice(0, 10) }))} />
                     </Field>
+                    <ReadOnlyField label="Email" value={profile.email} />
                   </div>
-                  <div className="mt-4 flex justify-end">
-                    <Button type="button" onClick={saveProfile} disabled={isSavingProfile}>
+                  <div className="mt-4 flex">
+                    <Button type="button" className="w-full sm:w-auto sm:ml-auto" onClick={saveProfile} disabled={isSavingProfile}>
                       <Save className="h-4 w-4" />
                       {isSavingProfile ? "Saving..." : "Save Personal Info"}
                     </Button>
                   </div>
                 </ProfileSection>
 
-                <ProfileSection title="Address Management" description="Default dispatch address for orders and invoices." icon={<MapPin className="h-5 w-5" />}>
+                <ProfileSection title="Address" icon={<MapPin className="h-5 w-5" />}>
+                  <div className="mb-4 rounded-lg border border-primary/20 bg-surface-soft p-4">
+                    <p className="text-xs font-black uppercase tracking-widest text-muted">Saved Address</p>
+                    <p className="mt-2 break-words text-sm font-bold leading-6 text-navy">{formatDefaultAddress(defaultAddress)}</p>
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Address Line" wide>
                       <Input value={addressForm.address} onChange={(event) => setAddressForm((current) => ({ ...current, address: event.target.value }))} />
@@ -197,22 +202,25 @@ export default function Profile() {
                       <Input value={addressForm.pincode} onChange={(event) => setAddressForm((current) => ({ ...current, pincode: event.target.value.replace(/\D/g, "").slice(0, 6) }))} />
                     </Field>
                   </div>
-                  <div className="mt-4 flex justify-end">
-                    <Button type="button" onClick={saveAddress} disabled={isSavingAddress}>
+                  <div className="mt-4 flex">
+                    <Button type="button" className="w-full sm:w-auto sm:ml-auto" onClick={saveAddress} disabled={isSavingAddress}>
                       <Save className="h-4 w-4" />
                       {isSavingAddress ? "Saving..." : "Save Address"}
                     </Button>
                   </div>
                 </ProfileSection>
 
-                <ProfileSection title="Change Password" description="Use your current password before setting a new one." icon={<LockKeyhole className="h-5 w-5" />}>
+                <ProfileSection title="Security" icon={<LockKeyhole className="h-5 w-5" />}>
+                  <div className="mb-4">
+                    <h3 className="text-base font-black text-navy">Change Password</h3>
+                  </div>
                   <div className="grid gap-4 lg:grid-cols-3">
                     <PasswordInput label="Current Password" value={passwordForm.currentPassword} show={showPasswords.currentPassword} onToggle={() => setShowPasswords((current) => ({ ...current, currentPassword: !current.currentPassword }))} onChange={(value) => setPasswordForm((current) => ({ ...current, currentPassword: value }))} />
                     <PasswordInput label="New Password" value={passwordForm.newPassword} show={showPasswords.newPassword} onToggle={() => setShowPasswords((current) => ({ ...current, newPassword: !current.newPassword }))} onChange={(value) => setPasswordForm((current) => ({ ...current, newPassword: value }))} />
                     <PasswordInput label="Confirm New Password" value={passwordForm.confirmNewPassword} show={showPasswords.confirmNewPassword} onToggle={() => setShowPasswords((current) => ({ ...current, confirmNewPassword: !current.confirmNewPassword }))} onChange={(value) => setPasswordForm((current) => ({ ...current, confirmNewPassword: value }))} />
                   </div>
-                  <div className="mt-4 flex justify-end">
-                    <Button type="button" onClick={changePassword} disabled={isChangingPassword}>
+                  <div className="mt-4 flex">
+                    <Button type="button" className="w-full sm:w-auto sm:ml-auto" onClick={changePassword} disabled={isChangingPassword}>
                       {isChangingPassword ? "Changing..." : "Change Password"}
                     </Button>
                   </div>
@@ -220,20 +228,18 @@ export default function Profile() {
               </div>
 
               <aside className="space-y-5">
-                <ProfileSection title="Pharmacy Information" description="Business identity registered with Shweta Drug Distributors." icon={<Building2 className="h-5 w-5" />}>
+                <ProfileSection title="Pharmacy Information" icon={<Building2 className="h-5 w-5" />}>
                   <div className="grid gap-3">
-                    <Info icon={<Store />} label="Pharmacy" value={profile.retailer?.pharmacyName ?? "Not available"} />
-                    <Info icon={<IdCard />} label="Retailer Code" value={profile.retailer?.code ?? "Not available"} />
-                    <Info icon={<IdCard />} label="GST Number" value={profile.retailer?.gstNumber ?? "Not available"} />
-                    <Info icon={<IdCard />} label="Drug License" value={profile.retailer?.drugLicenseNumber ?? "Not available"} />
+                    <Info icon={<Store className="h-5 w-5" />} label="Pharmacy Name" value={profile.retailer?.pharmacyName ?? "Not available"} />
+                    <Info icon={<IdCard className="h-5 w-5" />} label="GST Number" value={profile.retailer?.gstNumber ?? "Not available"} />
                   </div>
                 </ProfileSection>
 
-                <ProfileSection title="Account Information" description="Login identity and current portal access." icon={<Mail className="h-5 w-5" />}>
+                <ProfileSection title="Account Information" icon={<Mail className="h-5 w-5" />}>
                   <div className="grid gap-3">
-                    <Info icon={<Mail />} label="Email" value={profile.email} />
-                    <Info icon={<Phone />} label="Mobile" value={profile.phone ?? "Not available"} />
-                    <Info icon={<CheckCircle2 />} label="Status" value={profile.status} />
+                    <Info icon={<CheckCircle2 className="h-5 w-5" />} label="Account Status" value={profile.retailer?.status ?? profile.status} />
+                    <Info icon={<IdCard className="h-5 w-5" />} label="Retailer Code" value={profile.retailer?.code ?? "Not available"} />
+                    <Info icon={<IdCard className="h-5 w-5" />} label="Drug License" value={profile.retailer?.drugLicenseNumber ?? "Not available"} />
                   </div>
                 </ProfileSection>
               </aside>
@@ -245,14 +251,13 @@ export default function Profile() {
   );
 }
 
-function ProfileSection({ title, description, icon, children }: { title: string; description: string; icon: ReactNode; children: ReactNode }) {
+function ProfileSection({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
-    <Card className="p-5 sm:p-6">
-      <div className="mb-5 flex items-start gap-3">
+    <Card className="p-4 sm:p-6">
+      <div className="mb-5 flex items-center gap-3">
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-strong text-primary">{icon}</div>
         <div>
           <h2 className="text-lg font-black text-navy">{title}</h2>
-          <p className="mt-1 text-sm font-semibold text-muted">{description}</p>
         </div>
       </div>
       {children}
@@ -271,10 +276,21 @@ function Field({ label, wide, children }: { label: string; wide?: boolean; child
 
 function Info({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-surface-soft p-4">
-      <div className="mb-3 text-primary">{icon}</div>
+    <div className="flex gap-3 rounded-lg bg-surface-soft p-4">
+      <div className="mt-0.5 shrink-0 text-primary">{icon}</div>
+      <div className="min-w-0">
+        <p className="text-xs font-bold uppercase tracking-widest text-muted">{label}</p>
+        <p className="mt-1 break-words font-bold text-navy">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface-soft px-3 py-2.5">
       <p className="text-xs font-bold uppercase tracking-widest text-muted">{label}</p>
-      <p className="mt-1 break-words font-bold text-navy">{value}</p>
+      <p className="mt-1 break-words text-sm font-bold text-navy">{value}</p>
     </div>
   );
 }

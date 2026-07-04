@@ -74,7 +74,7 @@ export default function Dashboard() {
       <section className="rounded-lg border border-border bg-white p-5 shadow-sm md:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-black text-navy md:text-3xl">Employee Dashboard</h1>
+            <h1 className="text-2xl font-black text-navy md:text-3xl">Dashboard</h1>
             <p className="mt-2 max-w-3xl text-sm text-muted">
               Daily operations view for order processing, dispatch readiness, stock exceptions, and expiry checks.
             </p>
