@@ -52,9 +52,9 @@ export default function Dashboard() {
     return () => window.clearTimeout(timeoutId);
   }, [loadDashboard]);
 
-  const monthlySales = dashboard?.monthlySales ?? [];
-  const topMedicines = dashboard?.topSellingMedicines ?? [];
-  const topRetailers = dashboard?.topRetailersByOrderValue ?? [];
+  const monthlySales = useMemo(() => dashboard?.monthlySales ?? [], [dashboard?.monthlySales]);
+  const topMedicines = useMemo(() => dashboard?.topSellingMedicines ?? [], [dashboard?.topSellingMedicines]);
+  const topRetailers = useMemo(() => dashboard?.topRetailersByOrderValue ?? [], [dashboard?.topRetailersByOrderValue]);
   const maxSalesValue = useMemo(() => Math.max(0, ...monthlySales.map((item) => item.value)), [monthlySales]);
   const yAxisValues = useMemo(() => {
     if (maxSalesValue <= 0) return [0, 0, 0, 0, 0];

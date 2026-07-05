@@ -19,7 +19,7 @@ export default function OrderConfirmed() {
             : "Order placed successfully. You can view it in Order History."}
         </p>
         <Card className="mt-8 grid gap-4 p-5 text-left sm:grid-cols-2">
-          <p className="flex gap-3 text-sm text-muted"><FileText className="h-5 w-5 text-primary" /> GST invoice will be generated after dispatch.</p>
+          <p className="flex gap-3 text-sm text-muted"><FileText className="h-5 w-5 text-primary" /> GST invoice is available in Order History for download.</p>
           <p className="flex gap-3 text-sm text-muted"><Truck className="h-5 w-5 text-primary" /> Our team will confirm dispatch and delivery details shortly.</p>
         </Card>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">

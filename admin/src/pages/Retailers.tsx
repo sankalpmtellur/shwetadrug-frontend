@@ -76,10 +76,6 @@ export default function Retailers() {
     return () => window.clearTimeout(timeoutId);
   }, [loadRetailers]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
-
   async function handleStatusChange(id: string, status: string) {
     setUpdatingId(id);
     setActionError(null);
@@ -122,7 +118,10 @@ export default function Retailers() {
               <input
                 className="h-10 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
                 placeholder="Search retailers"
               />
             </label>
