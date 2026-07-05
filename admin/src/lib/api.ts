@@ -49,12 +49,21 @@ if (typeof window !== "undefined") {
 }
 
 function getApiBaseUrl() {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:5001/api/v1" : undefined);
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:5001/api/v1" : "")).trim();
   if (!apiBaseUrl) {
-    throw new Error("VITE_API_BASE_URL is required for production builds.");
+    const message = "VITE_API_BASE_URL is required. Refusing to call relative frontend URLs for API requests.";
+    console.error(message);
+    throw new Error(message);
+  }
+  if (import.meta.env.PROD && !/^https?:\/\//i.test(apiBaseUrl)) {
+    const message = "VITE_API_BASE_URL must be an absolute URL in production.";
+    console.error(message);
+    throw new Error(message);
   }
   return apiBaseUrl;
 }
+
+const apiBaseUrl = getApiBaseUrl();
 
 export const tokenStorage = {
   get() {
@@ -78,7 +87,7 @@ export const tokenStorage = {
 };
 
 const api = axios.create({
-  baseURL: getApiBaseUrl(),
+  baseURL: apiBaseUrl,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -97,7 +106,7 @@ function getCsrfHeaders() {
 function refreshSession() {
   refreshRequest ??= axios
     .post<ApiResponse<RefreshPayload>>(
-      `${api.defaults.baseURL}/auth/refresh-token`,
+      `${apiBaseUrl}/auth/refresh-token`,
       {},
       { withCredentials: true, headers: { ...portalRoleHeader, ...getCsrfHeaders() } },
     )

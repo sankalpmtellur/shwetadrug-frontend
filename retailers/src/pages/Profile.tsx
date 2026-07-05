@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Building2, CheckCircle2, Eye, EyeOff, IdCard, LockKeyhole, Mail, MapPin, Save, Store, UserRound } from "lucide-react";
+import { ArrowLeft, Building2, CheckCircle2, Eye, EyeOff, IdCard, LockKeyhole, Mail, MapPin, Phone, Save, Store, UserRound } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Input } from "../components/common/Input";
@@ -146,7 +146,7 @@ export default function Profile() {
         {!isLoading && !errorMessage && profile ? (
           <>
             <section className="rounded-lg border border-border bg-white p-4 shadow-sm sm:p-6">
-              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
                   <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-primary text-white sm:h-16 sm:w-16">
                     <Store className="h-7 w-7" />
@@ -159,6 +159,11 @@ export default function Profile() {
                     <h1 className="mt-2 break-words text-xl font-black text-navy sm:text-3xl">{profile.retailer?.pharmacyName ?? profile.name}</h1>
                     <p className="mt-1 break-words text-sm font-semibold text-muted">{profile.name}</p>
                   </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[520px]">
+                  <QuickFact icon={<Phone className="h-4 w-4" />} label="Mobile" value={profileForm.phone || "Not available"} />
+                  <QuickFact icon={<Mail className="h-4 w-4" />} label="Email" value={profile.email} />
+                  <QuickFact icon={<MapPin className="h-4 w-4" />} label="City" value={defaultAddress?.city ?? "Not set"} />
                 </div>
               </div>
             </section>
@@ -262,6 +267,18 @@ function ProfileSection({ title, icon, children }: { title: string; icon: ReactN
       </div>
       {children}
     </Card>
+  );
+}
+
+function QuickFact({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-border bg-surface-soft p-3">
+      <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted">
+        <span className="text-primary">{icon}</span>
+        {label}
+      </div>
+      <p className="mt-1 truncate text-sm font-black text-navy" title={value}>{value}</p>
+    </div>
   );
 }
 

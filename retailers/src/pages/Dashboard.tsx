@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { Factory, Info, Minus, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Tags } from "lucide-react";
+import { Info, PackageCheck, Search, ShoppingBag, ShoppingCart } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
 import { DashboardLayout } from "../layouts/DashboardLayout";
@@ -29,8 +28,6 @@ function usePageSize() {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
-  const [quantityErrors, setQuantityErrors] = useState<Record<string, string>>({});
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +37,7 @@ export default function Dashboard() {
   const pageKey = `${search}:${pageSize}`;
   const [paging, setPaging] = useState({ key: pageKey, count: pageSize });
   const visibleCount = paging.key === pageKey ? paging.count : pageSize;
-  const { addItem, items, setItemQuantity } = useCart();
+  const { addItem } = useCart();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,27 +78,8 @@ export default function Dashboard() {
   const visibleMedicines = useMemo(() => medicines.slice(0, visibleCount), [medicines, visibleCount]);
   const canLoadMore = visibleCount < medicines.length;
 
-  const updateQuantityDraft = (medicineId: string, value: string) => {
-    setQuantityDrafts((current) => ({ ...current, [medicineId]: value.replace(/[^\d]/g, "") }));
-    setQuantityErrors((current) => ({ ...current, [medicineId]: "" }));
-  };
-
-  const stepQuantityDraft = (medicineId: string, delta: number) => {
-    const currentValue = Number(quantityDrafts[medicineId] || "1");
-    const nextValue = Math.max(1, (Number.isFinite(currentValue) ? currentValue : 1) + delta);
-    updateQuantityDraft(medicineId, String(nextValue));
-  };
-
   const confirmQuantity = async (medicine: Medicine, action: "cart" | "buy") => {
-    const qty = Number(quantityDrafts[medicine.id] || "1");
-
-    if (!Number.isInteger(qty) || qty <= 0) {
-      setQuantityErrors((current) => ({ ...current, [medicine.id]: "Enter a valid quantity." }));
-      return;
-    }
-
-    await addItem(medicine, qty);
-    setQuantityDrafts((current) => ({ ...current, [medicine.id]: "1" }));
+    await addItem(medicine, 1);
 
     if (action === "buy") {
       navigate("/checkout");
@@ -150,74 +128,37 @@ export default function Dashboard() {
           <div className="relative z-0 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visibleMedicines.map((medicine) => {
               const isOut = medicine.status === "Out";
-              const cartItem = items.find((item) => item.medicineId === medicine.id);
-              const isInCart = Boolean(cartItem);
-              const cartQty = cartItem?.qty ?? 0;
-              const quantityDraft = quantityDrafts[medicine.id] ?? "1";
-              const quantityError = quantityErrors[medicine.id];
 
               return (
-                <article key={medicine.id} className="relative z-0 flex min-h-[276px] flex-col rounded-lg border border-border bg-white p-3 shadow-sm transition hover:border-primary/30 hover:shadow-md sm:p-4">
+                <article key={medicine.id} className="relative z-0 flex min-h-[224px] flex-col rounded-lg border border-border bg-white p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md">
                   <div className="flex items-start justify-between gap-3">
-                    <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedMedicine(medicine)}>
-                      <h2 className="line-clamp-2 min-h-[42px] text-[15px] font-black leading-snug text-navy sm:text-base">{medicine.name}</h2>
-                    </button>
-                    <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-soft text-primary transition hover:bg-surface-strong" onClick={() => setSelectedMedicine(medicine)} aria-label={`View ${medicine.name} details`}>
-                      <Info className="h-4 w-4" />
+                    <h2 className="line-clamp-3 min-h-[60px] min-w-0 flex-1 text-base font-black leading-snug text-navy">{medicine.name}</h2>
+                    <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-soft text-primary transition hover:bg-surface-strong" onClick={() => setSelectedMedicine(medicine)} aria-label={`View ${medicine.name} details`}>
+                      <Info className="h-5 w-5" />
                     </button>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div className="mt-4 grid grid-cols-2 gap-3">
                     <Metric label="Available Stock" value={isOut ? "Out" : `${medicine.stock} units`} tone={isOut ? "error" : medicine.status === "Limited" ? "warning" : "default"} />
                     <Metric label="MRP" value={currency(medicine.mrp)} strong />
                   </div>
 
-                  <div className="mt-3 rounded-lg border border-border bg-surface-soft p-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-black uppercase tracking-widest text-muted">{isInCart ? "Cart Qty" : "Order Qty"}</span>
-                      {isInCart ? <span className="text-xs font-black text-primary">Added</span> : null}
-                    </div>
-                    <div className="mt-3 grid grid-cols-[42px_1fr_42px] overflow-hidden rounded-lg border border-border bg-white">
-                      <button type="button" className="grid h-11 place-items-center text-muted" onClick={() => (isInCart ? void setItemQuantity(medicine.id, cartQty - 1) : stepQuantityDraft(medicine.id, -1))} aria-label={`Decrease ${medicine.name}`}>
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      {isInCart ? (
-                        <div className="grid h-11 place-items-center border-x border-border text-sm font-black text-navy">{cartQty}</div>
-                      ) : (
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          inputMode="numeric"
-                          value={quantityDraft}
-                          onChange={(event) => updateQuantityDraft(medicine.id, event.target.value)}
-                          className="h-11 min-w-0 border-x border-border text-center text-sm font-black text-navy outline-none"
-                          aria-label={`Enter quantity for ${medicine.name}`}
-                        />
-                      )}
-                      <button type="button" className="grid h-11 place-items-center text-primary" onClick={() => (isInCart ? void setItemQuantity(medicine.id, cartQty + 1) : stepQuantityDraft(medicine.id, 1))} aria-label={`Increase ${medicine.name}`}>
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {quantityError ? <p className="mt-2 text-xs font-bold text-error">{quantityError}</p> : null}
-                  </div>
-
-                  <div className="mt-auto pt-3">
+                  <div className="mt-auto pt-4">
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         disabled={isOut}
                         variant={isOut ? "ghost" : "secondary"}
                         className="h-11 rounded-lg px-2 text-sm"
-                        onClick={() => (isInCart ? navigate("/checkout") : void confirmQuantity(medicine, "cart"))}
+                        onClick={() => void confirmQuantity(medicine, "cart")}
                       >
                         <ShoppingCart className="h-4 w-4" />
-                        {isInCart ? "Checkout" : "Add to Cart"}
+                        Add to Cart
                       </Button>
                       <Button
                         disabled={isOut}
                         variant={isOut ? "ghost" : "primary"}
                         className="h-11 rounded-lg px-2 text-sm"
-                        onClick={() => (isInCart ? navigate("/checkout") : void confirmQuantity(medicine, "buy"))}
+                        onClick={() => void confirmQuantity(medicine, "buy")}
                       >
                         <ShoppingBag className="h-4 w-4" />
                         Buy Now
@@ -254,35 +195,29 @@ export default function Dashboard() {
 
       <Modal open={Boolean(selectedMedicine)} title="Medicine Information" onClose={() => setSelectedMedicine(null)}>
         {selectedMedicine ? (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-surface-soft p-4">
-              <div className="flex items-start gap-3">
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-primary">
-                  <PackageCheck className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-wide ${selectedMedicine.status === "Out" ? "bg-red-50 text-error" : selectedMedicine.status === "Limited" ? "bg-orange-50 text-orange-700" : "bg-green-50 text-green-700"}`}>
-                    {selectedMedicine.status}
-                  </p>
-                  <h3 className="mt-2 break-words text-lg font-black leading-6 text-navy">{selectedMedicine.name}</h3>
-                  {selectedMedicine.genericName && selectedMedicine.genericName !== "Not available" ? (
-                    <p className="mt-1 text-sm font-semibold leading-6 text-muted">{selectedMedicine.genericName}</p>
-                  ) : null}
-                </div>
+          <div className="space-y-5">
+            <div className="flex items-start gap-3 rounded-lg border border-border bg-surface-soft p-4">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-white text-primary">
+                <PackageCheck className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-wide ${selectedMedicine.status === "Out" ? "bg-red-50 text-error" : selectedMedicine.status === "Limited" ? "bg-orange-50 text-orange-700" : "bg-green-50 text-green-700"}`}>
+                  {selectedMedicine.status}
+                </p>
+                <h3 className="mt-2 break-words text-lg font-black leading-6 text-navy">{selectedMedicine.name}</h3>
+                {selectedMedicine.genericName && selectedMedicine.genericName !== "Not available" ? (
+                  <p className="mt-1 text-sm font-semibold leading-6 text-muted">{selectedMedicine.genericName}</p>
+                ) : null}
               </div>
             </div>
-            <InfoSection title="Business Details" icon={<Tags className="h-4 w-4" />}>
-              <Detail label="Generic Name" value={selectedMedicine.genericName} />
-              <Detail label="Manufacturer" value={selectedMedicine.manufacturer} />
-              <Detail label="Category" value={selectedMedicine.category} />
-              <Detail label="Pack Size" value={selectedMedicine.pack} />
-            </InfoSection>
-            <InfoSection title="Stock & Pricing" icon={<Factory className="h-4 w-4" />}>
+            <div className="grid gap-3 sm:grid-cols-2">
               <Detail label="Available Stock" value={`${selectedMedicine.stock} units`} />
               <Detail label="MRP" value={currency(selectedMedicine.mrp)} />
               <Detail label="Selling Price" value={currency(selectedMedicine.price)} />
               <Detail label="GST" value={`${selectedMedicine.gst}%`} />
-            </InfoSection>
+              <Detail label="Manufacturer" value={selectedMedicine.manufacturer} />
+              <Detail label="Pack Size" value={selectedMedicine.pack} />
+            </div>
           </div>
         ) : null}
       </Modal>
@@ -307,17 +242,5 @@ function Detail({ label, value }: { label: string; value: string }) {
       <p className="text-[11px] font-bold uppercase tracking-widest text-muted">{label}</p>
       <p className="mt-1 break-words text-sm font-black text-navy">{value}</p>
     </div>
-  );
-}
-
-function InfoSection({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
-  return (
-    <section>
-      <div className="mb-3 flex items-center gap-2 text-sm font-black text-navy">
-        <span className="grid h-7 w-7 place-items-center rounded-lg bg-surface-strong text-primary">{icon}</span>
-        {title}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">{children}</div>
-    </section>
   );
 }
