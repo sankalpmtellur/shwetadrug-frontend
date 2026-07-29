@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Info, PackageCheck, Search, ShoppingBag, ShoppingCart } from "lucide-react";
+import { Info, Minus, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart } from "lucide-react";
+import toast from "react-hot-toast";
 import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
 import { DashboardLayout } from "../layouts/DashboardLayout";
@@ -30,6 +31,8 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [requestedQty, setRequestedQty] = useState<Record<string, number>>({});
+  const [pendingMedicineId, setPendingMedicineId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [retryKey, setRetryKey] = useState(0);
@@ -37,7 +40,7 @@ export default function Dashboard() {
   const pageKey = `${search}:${pageSize}`;
   const [paging, setPaging] = useState({ key: pageKey, count: pageSize });
   const visibleCount = paging.key === pageKey ? paging.count : pageSize;
-  const { addItem } = useCart();
+  const { addItem, items, setItemQuantity } = useCart();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -54,6 +57,7 @@ export default function Dashboard() {
 
         if (!controller.signal.aborted) {
           setMedicines(nextMedicines);
+          setPaging({ key: `${query}:${pageSize}`, count: pageSize });
         }
       } catch {
         if (!controller.signal.aborted) {
@@ -73,25 +77,55 @@ export default function Dashboard() {
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [retryKey, search]);
+  }, [pageSize, retryKey, search]);
 
   const visibleMedicines = useMemo(() => medicines.slice(0, visibleCount), [medicines, visibleCount]);
   const canLoadMore = visibleCount < medicines.length;
 
-  const confirmQuantity = async (medicine: Medicine, action: "cart" | "buy") => {
-    await addItem(medicine, 1);
+  function cartQuantity(medicineId: string) {
+    return items.find((item) => item.medicineId === medicineId)?.qty ?? 0;
+  }
 
-    if (action === "buy") {
-      navigate("/checkout");
+  function selectedQuantity(medicine: Medicine) {
+    return requestedQty[medicine.id] ?? Math.min(Math.max(cartQuantity(medicine.id) || 1, 1), Math.max(medicine.stock, 1));
+  }
+
+  function setQuantity(medicine: Medicine, value: number) {
+    const max = Math.max(1, medicine.stock);
+    const nextQty = Number.isFinite(value) ? Math.min(Math.max(1, Math.trunc(value)), max) : 1;
+    setRequestedQty((current) => ({ ...current, [medicine.id]: nextQty }));
+  }
+
+  const updateCart = async (medicine: Medicine, action: "cart" | "buy") => {
+    if (medicine.status === "Out" || medicine.stock <= 0 || pendingMedicineId) return;
+
+    const qty = selectedQuantity(medicine);
+    const existingQty = cartQuantity(medicine.id);
+
+    setPendingMedicineId(medicine.id);
+    try {
+      if (existingQty > 0) {
+        await setItemQuantity(medicine.id, qty);
+        toast.success(`${medicine.name} quantity updated to ${qty}.`);
+      } else {
+        await addItem(medicine, qty);
+        toast.success(`${qty} units added to cart.`);
+      }
+
+      if (action === "buy") {
+        navigate("/checkout");
+      }
+    } finally {
+      setPendingMedicineId(null);
     }
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-5">
-        <div className="sticky top-0 z-30 -mx-3 bg-background px-3 pb-4 pt-3 border-b border-slate-300/80 md:-mx-8 md:px-8 md:pt-6">
+        <div className="sticky top-0 z-30 -mx-3 border-b border-slate-300/80 bg-background px-3 pb-4 pt-3 md:-mx-8 md:px-8 md:pt-6">
           <div className="mx-auto max-w-6xl">
-            <div className="rounded-xl border border-slate-300/80 bg-white p-2 shadow-sm transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:shadow-md">
+            <div className="rounded-lg border border-slate-300/80 bg-white p-2 shadow-sm transition-all focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-blue-500" />
                 <input
@@ -103,14 +137,13 @@ export default function Dashboard() {
                 />
               </label>
             </div>
-
           </div>
         </div>
 
         {isLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-3">
             {Array.from({ length: pageSize }).map((_, item) => (
-              <div key={item} className="h-64 animate-pulse rounded-lg bg-white shadow-sm" />
+              <div key={item} className="h-36 animate-pulse rounded-lg bg-white shadow-sm" />
             ))}
           </div>
         ) : null}
@@ -125,51 +158,68 @@ export default function Dashboard() {
         ) : null}
 
         {!isLoading && !errorMessage ? (
-          <div className="relative z-0 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-3">
             {visibleMedicines.map((medicine) => {
-              const isOut = medicine.status === "Out";
+              const isOut = medicine.status === "Out" || medicine.stock <= 0;
+              const currentCartQty = cartQuantity(medicine.id);
+              const qty = selectedQuantity(medicine);
+              const isPending = pendingMedicineId === medicine.id;
 
               return (
-                <article key={medicine.id} className="relative z-0 flex min-h-[224px] flex-col rounded-lg border border-border bg-white p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md">
-                  <div className="flex items-start justify-between gap-3">
-                    <h2 className="line-clamp-3 min-h-[60px] min-w-0 flex-1 text-base font-black leading-snug text-navy">{medicine.name}</h2>
-                    <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-soft text-primary transition hover:bg-surface-strong" onClick={() => setSelectedMedicine(medicine)} aria-label={`View ${medicine.name} details`}>
-                      <Info className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <Metric label="Available Stock" value={isOut ? "Out" : `${medicine.stock} units`} tone={isOut ? "error" : medicine.status === "Limited" ? "warning" : "default"} />
-                    <Metric label="MRP" value={currency(medicine.mrp)} strong />
-                  </div>
-
-                  <div className="mt-auto pt-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        disabled={isOut}
-                        variant={isOut ? "ghost" : "secondary"}
-                        className="h-11 rounded-lg px-2 text-sm"
-                        onClick={() => void confirmQuantity(medicine, "cart")}
-                      >
-                        <ShoppingCart className="h-4 w-4" />
-                        Add to Cart
-                      </Button>
-                      <Button
-                        disabled={isOut}
-                        variant={isOut ? "ghost" : "primary"}
-                        className="h-11 rounded-lg px-2 text-sm"
-                        onClick={() => void confirmQuantity(medicine, "buy")}
-                      >
-                        <ShoppingBag className="h-4 w-4" />
-                        Buy Now
-                      </Button>
+                <article key={medicine.id} className="rounded-lg border border-border bg-white p-4 shadow-sm transition hover:border-primary/30">
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_260px] lg:items-center">
+                    <div className="min-w-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h2 className="break-words text-base font-black leading-snug text-navy">{medicine.name}</h2>
+                          <p className="mt-1 break-words text-sm font-semibold text-muted">{medicine.manufacturer} | {medicine.pack}</p>
+                        </div>
+                        <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-soft text-primary transition hover:bg-surface-strong" onClick={() => setSelectedMedicine(medicine)} aria-label={`View ${medicine.name} details`}>
+                          <Info className="h-5 w-5" />
+                        </button>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs font-black">
+                        <span className={`rounded-full px-3 py-1 ${isOut ? "bg-red-50 text-error" : medicine.status === "Limited" ? "bg-orange-50 text-orange-700" : "bg-green-50 text-green-700"}`}>
+                          {isOut ? "Out of stock" : `${medicine.stock} available`}
+                        </span>
+                        {currentCartQty > 0 ? <span className="rounded-full bg-blue-50 px-3 py-1 text-primary">{currentCartQty} in cart</span> : null}
+                      </div>
                     </div>
 
-                    {isOut ? (
-                      <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-center text-xs font-black text-error">
-                        Out of Stock
-                      </p>
-                    ) : null}
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+                      <PriceLine label="MRP" value={currency(medicine.mrp)} />
+                      <PriceLine label="Retailer price" value={currency(medicine.price)} strong />
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-[150px_1fr] lg:grid-cols-1">
+                      <QuantitySelector
+                        medicineName={medicine.name}
+                        value={qty}
+                        max={Math.max(1, medicine.stock)}
+                        disabled={isOut || isPending}
+                        onChange={(value) => setQuantity(medicine, value)}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          disabled={isOut || isPending}
+                          variant={isOut ? "ghost" : "secondary"}
+                          className="h-11 px-2 text-sm"
+                          onClick={() => void updateCart(medicine, "cart")}
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                          {currentCartQty > 0 ? "Update" : "Add"}
+                        </Button>
+                        <Button
+                          disabled={isOut || isPending}
+                          variant={isOut ? "ghost" : "primary"}
+                          className="h-11 px-2 text-sm"
+                          onClick={() => void updateCart(medicine, "buy")}
+                        >
+                          <ShoppingBag className="h-4 w-4" />
+                          Buy Now
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </article>
               );
@@ -225,13 +275,43 @@ export default function Dashboard() {
   );
 }
 
-function Metric({ label, value, strong, tone = "default" }: { label: string; value: string; strong?: boolean; tone?: "default" | "warning" | "error" }) {
-  const toneClass = tone === "error" ? "text-error" : tone === "warning" ? "text-orange-700" : strong ? "text-primary" : "text-navy";
-
+function QuantitySelector({ medicineName, value, max, disabled, onChange }: { medicineName: string; value: number; max: number; disabled: boolean; onChange: (value: number) => void }) {
   return (
-    <div className="rounded-lg bg-surface-soft p-3">
+    <div>
+      <label className="mb-2 block text-xs font-black uppercase tracking-widest text-muted" htmlFor={`qty-${medicineName}`}>
+        Quantity
+      </label>
+      <div className="flex h-11 overflow-hidden rounded-lg border border-border bg-white">
+        <button type="button" disabled={disabled || value <= 1} onClick={() => onChange(value - 1)} className="grid w-11 place-items-center text-muted transition hover:bg-surface-soft disabled:opacity-40" aria-label={`Decrease ${medicineName} quantity`}>
+          <Minus className="h-4 w-4" />
+        </button>
+        <input
+          id={`qty-${medicineName}`}
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={max}
+          step={1}
+          disabled={disabled}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+          className="min-w-0 flex-1 border-x border-border text-center text-sm font-black text-navy outline-none"
+          aria-label={`${medicineName} quantity`}
+        />
+        <button type="button" disabled={disabled || value >= max} onClick={() => onChange(value + 1)} className="grid w-11 place-items-center text-muted transition hover:bg-surface-soft disabled:opacity-40" aria-label={`Increase ${medicineName} quantity`}>
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+      {!disabled && value >= max ? <p className="mt-1 text-xs font-bold text-orange-700">Maximum available stock selected.</p> : null}
+    </div>
+  );
+}
+
+function PriceLine({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="rounded-lg bg-surface-soft px-3 py-2">
       <p className="text-[11px] font-bold uppercase tracking-widest text-muted">{label}</p>
-      <p className={`mt-1 break-words text-lg font-black ${toneClass}`}>{value}</p>
+      <p className={`mt-1 text-base font-black ${strong ? "text-primary" : "text-navy"}`}>{value}</p>
     </div>
   );
 }

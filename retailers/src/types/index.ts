@@ -107,6 +107,15 @@ export type OrderInvoice = {
     invoiceNo: string;
     status: string;
     issuedAt: string;
+    dueAt?: string | null;
+  };
+  retailer: {
+    pharmacyName: string;
+    ownerName: string;
+    mobile: string | null;
+    gstNumber: string | null;
+    drugLicenseNumber: string;
+    addresses: DefaultAddress[];
   };
   order: {
     id: string;
@@ -124,10 +133,18 @@ export type OrderInvoice = {
       id: string;
       sku: string;
       name: string;
+      genericName?: string;
       packSize: string;
+      hsnCode?: string | null;
+      category?: string;
+      manufacturer?: string | { name?: string | null } | null;
+      mrp?: number;
     };
+    batchNumber?: string | null;
+    expiryDate?: string | null;
     quantity: number;
     unitPrice: number;
+    taxableValue?: number;
     gstPercent: number;
     gstAmount: number;
     lineTotal: number;
