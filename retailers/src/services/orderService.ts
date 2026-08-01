@@ -4,13 +4,24 @@ import type { CartItem, CreatedOrder, OrderInvoice, RetailerOrder } from "../typ
 
 const CREATED_ORDER_KEY = "shweta-retailer-created-order";
 
-type CreateOrderPayload = {
-  paymentMethod: "CASH_ON_DELIVERY";
-  deliveryAddressId?: string;
-  items: Array<{
-    medicineId: string;
-    quantity: number;
-  }>;
+type BackendOrderItem = {
+  medicine_id: number;
+  name: string;
+  batch: string;
+  packing: string;
+  quantity: number;
+  ptr_at_order: number;
+  discount_percent: number;
+  final_price: number;
+};
+
+type BackendOrder = {
+  id: number;
+  order_no: string;
+  order_date: string;
+  total_amount: number;
+  status: string;
+  ordered_items?: BackendOrderItem[];
 };
 
 export function saveCreatedOrder(order: CreatedOrder) {
@@ -29,59 +40,113 @@ export function getCreatedOrder() {
   }
 }
 
-export const orderService = {
-  async createOrder(items: CartItem[], deliveryAddressId?: string) {
-    const payload: CreateOrderPayload = {
-      paymentMethod: "CASH_ON_DELIVERY",
-      deliveryAddressId,
-      items: items.map((item) => ({
-        medicineId: item.medicineId,
-        quantity: item.qty,
-      })),
-    };
+function mapOrderItem(item: BackendOrderItem, index: number) {
+  return {
+    id: `${item.medicine_id}-${index}`,
+    medicineId: String(item.medicine_id),
+    medicineName: item.name,
+    sku: item.batch,
+    packSize: item.packing,
+    quantity: item.quantity,
+    unitPrice: item.quantity > 0 ? item.final_price / item.quantity : item.ptr_at_order,
+    lineTotal: item.final_price,
+  };
+}
 
-    const response = await api.post<ApiResponse<CreatedOrder>>("/orders", payload);
-    return response.data.data;
+function mapCreatedOrder(order: BackendOrder): CreatedOrder {
+  return {
+    id: String(order.id),
+    orderNo: order.order_no,
+    status: order.status,
+    totalAmount: order.total_amount,
+    createdAt: order.order_date,
+  };
+}
+
+function mapRetailerOrder(order: BackendOrder): RetailerOrder {
+  return {
+    id: String(order.id),
+    orderNo: order.order_no,
+    status: order.status as RetailerOrder["status"],
+    totalAmount: order.total_amount,
+    placedAt: order.order_date,
+    items: (order.ordered_items ?? []).map(mapOrderItem),
+    invoice: {
+      invoiceNo: order.order_no,
+      status: order.status,
+      issuedAt: order.order_date,
+    },
+  };
+}
+
+function mapInvoice(order: RetailerOrder): OrderInvoice {
+  return {
+    invoice: {
+      invoiceNo: order.orderNo,
+      status: order.status,
+      issuedAt: order.placedAt,
+    },
+    retailer: {
+      pharmacyName: "Retailer pharmacy",
+      ownerName: "Retailer",
+      mobile: null,
+      gstNumber: null,
+      drugLicenseNumber: "-",
+      addresses: [],
+    },
+    order: {
+      id: order.id,
+      orderNo: order.orderNo,
+      status: order.status,
+      placedAt: order.placedAt,
+      subtotal: order.totalAmount,
+      gstAmount: 0,
+      deliveryCharge: 0,
+      totalAmount: order.totalAmount,
+    },
+    items: order.items.map((item) => ({
+      id: item.id,
+      medicine: {
+        id: item.medicineId,
+        sku: item.sku,
+        name: item.medicineName,
+        packSize: item.packSize,
+      },
+      batchNumber: item.sku,
+      expiryDate: null,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      gstPercent: 0,
+      gstAmount: 0,
+      lineTotal: item.lineTotal,
+    })),
+  };
+}
+
+export const orderService = {
+  async createOrder(_items: CartItem[], _deliveryAddressId?: string) {
+    const response = await api.post<ApiResponse<BackendOrder>>("/orders");
+    return mapCreatedOrder(response.data.data);
   },
 
   async getOrders() {
-    const response = await api.get<ApiResponse<RetailerOrder[]>>("/orders", {
-      params: { limit: 100 },
-    });
-    return response.data.data;
+    const response = await api.get<ApiResponse<BackendOrder[]>>("/orders");
+    const orders = response.data.data;
+
+    return Promise.all(
+      orders.map(async (order) => {
+        const detail = await api.get<ApiResponse<BackendOrder>>(`/orders/${order.id}`);
+        return mapRetailerOrder(detail.data.data);
+      }),
+    );
   },
 
   async getOrderInvoice(orderId: string) {
-    const response = await api.get<ApiResponse<OrderInvoice>>(`/orders/${orderId}/invoice`);
-    return response.data.data;
+    const response = await api.get<ApiResponse<BackendOrder>>(`/orders/${orderId}`);
+    return mapInvoice(mapRetailerOrder(response.data.data));
   },
 
-  async downloadOrderInvoicePdf(orderId: string) {
-    const response = await api.get<Blob>(`/orders/${orderId}/invoice/pdf`, {
-      responseType: "blob",
-      headers: { Accept: "application/pdf" },
-    });
-    return ensurePdfBlob(response.data);
+  async downloadOrderInvoicePdf(_orderId: string): Promise<Blob> {
+    throw new Error("Invoice PDF download is not available yet.");
   },
 };
-
-async function ensurePdfBlob(blob: Blob) {
-  const header = await blob.slice(0, 5).text();
-
-  if (blob.type.includes("application/pdf") || header === "%PDF-") {
-    return blob.type.includes("application/pdf") ? blob : new Blob([blob], { type: "application/pdf" });
-  }
-
-  let message = "Invoice PDF could not be generated. Please try again.";
-
-  if (blob.type.includes("application/json")) {
-    try {
-      const error = JSON.parse(await blob.text()) as { message?: string };
-      message = error.message ?? message;
-    } catch {
-      message = "Invoice PDF could not be generated. Please try again.";
-    }
-  }
-
-  throw new Error(message);
-}

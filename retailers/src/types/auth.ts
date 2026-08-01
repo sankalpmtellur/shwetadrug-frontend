@@ -20,12 +20,12 @@ export type ApiResponse<T> = {
 
 export type AuthResponse = {
   user: User;
-  accessToken: string;
-  csrfToken: string;
+  accessToken?: string;
+  csrfToken?: string;
 };
 
 export type LoginPayload = {
-  email: string;
+  phone: string;
   password: string;
 };
 
@@ -41,7 +41,7 @@ export type RetailerSignupPayload = {
   pincode: string;
   password: string;
   confirmPassword: string;
-  otpVerificationToken: string;
+  otpVerificationToken?: string;
 };
 
 export type SignupOtpRequestPayload = {

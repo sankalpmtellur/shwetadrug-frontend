@@ -5,13 +5,14 @@ import { Eye, EyeOff } from "lucide-react";
 import { AuthLayout } from "../layouts/AuthLayout";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
+import { getApiErrorMessage } from "../lib/api";
 import { saveAuth, clearAuth } from "../lib/auth";
 import { authService } from "../services/authService";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const auth = await authService.login({ email, password });
+      const auth = await authService.login({ phone, password });
 
       if (auth.user.role !== "RETAILER") {
         clearAuth();
@@ -38,8 +39,8 @@ export default function Login() {
       saveAuth(auth);
       toast.success("Login successful");
       navigate("/dashboard", { replace: true });
-    } catch {
-      toast.error("Invalid email or password");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Invalid phone or password"));
     } finally {
       setIsLoading(false);
     }
@@ -49,13 +50,13 @@ export default function Login() {
     <AuthLayout title="Welcome" subtitle="Login to continue ordering medicines for your pharmacy.">
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block text-sm font-semibold text-navy">
-          Email
+          Phone
           <Input
             className="mt-2"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="Enter email"
+            inputMode="numeric"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value.replace(/\D/g, "").slice(0, 10))}
+            placeholder="Enter phone number"
             required
           />
         </label>

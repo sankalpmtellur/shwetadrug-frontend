@@ -3,12 +3,11 @@ import type { AuthResponse, User } from "../types/auth";
 const LEGACY_ACCESS_TOKEN_KEY = "sdd_retailer_access_token";
 const LEGACY_REFRESH_TOKEN_KEY = "sdd_retailer_refresh_token";
 const USER_KEY = "sdd_retailer_user";
-let accessToken: string | null = null;
-let csrfToken: string | null = null;
 export const AUTH_CHANGED_EVENT = "sdd-retailer-auth-changed";
 
 if (typeof window !== "undefined") {
   localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
 }
 
 function notifyAuthChanged() {
@@ -17,9 +16,6 @@ function notifyAuthChanged() {
 }
 
 export function saveAuth(auth: AuthResponse, notify = true) {
-  accessToken = auth.accessToken;
-  csrfToken = auth.csrfToken;
-  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
   localStorage.setItem(USER_KEY, JSON.stringify(auth.user));
   if (notify) notifyAuthChanged();
 }
@@ -29,11 +25,11 @@ export function saveUser(user: User) {
 }
 
 export function getAccessToken() {
-  return accessToken;
+  return getUser() ? "session" : null;
 }
 
 export function getCsrfToken() {
-  return csrfToken;
+  return null;
 }
 
 export function getUser(): User | null {
@@ -49,8 +45,6 @@ export function getUser(): User | null {
 }
 
 export function clearAuth(notify = true) {
-  accessToken = null;
-  csrfToken = null;
   localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
@@ -58,5 +52,5 @@ export function clearAuth(notify = true) {
 }
 
 export function isAuthenticated() {
-  return Boolean(accessToken);
+  return Boolean(getUser());
 }

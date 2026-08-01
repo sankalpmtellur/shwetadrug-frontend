@@ -3,26 +3,24 @@ import type { ApiResponse } from "../types/auth";
 import type { Medicine } from "../types";
 
 type BackendMedicine = {
-  id: string;
-  sku: string;
+  id: number;
   name: string;
-  genericName: string | null;
-  packSize: string;
-  category: { name: string } | null;
-  manufacturer: { name: string } | null;
   mrp: number;
-  sellingPrice: number;
-  gstPercent: number;
-  marginPercent: number | null;
-  reorderLevel: number;
-  status: "ACTIVE" | "DISCONTINUED" | "BLOCKED";
-  availableStock: number;
-  batches: Array<{
-    batchNumber: string;
-    expiryDate: string;
-    quantityOnHand: number;
-    quantityBlocked: number;
-  }>;
+  stock: number;
+  batch: string;
+  expiry_date: string;
+  ptr?: number;
+  packing?: string;
+  max_discount_percent?: number;
+};
+
+type MedicineListMeta = {
+  pagination?: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
 };
 
 function formatExpiry(value: string | undefined) {
@@ -32,52 +30,66 @@ function formatExpiry(value: string | undefined) {
   if (Number.isNaN(date.getTime())) return "Not available";
 
   return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
     month: "short",
     year: "numeric",
   });
 }
 
-function toMedicineStatus(medicine: BackendMedicine): Medicine["status"] {
-  if (medicine.status !== "ACTIVE" || medicine.availableStock <= 0) return "Out";
-  if (medicine.availableStock <= Math.max(medicine.reorderLevel, 100)) return "Limited";
-  return "In Stock";
-}
-
 function mapMedicine(medicine: BackendMedicine): Medicine {
-  const firstBatch = medicine.batches[0];
+  const ptr = medicine.ptr ?? medicine.mrp;
 
   return {
-    id: medicine.id,
+    id: String(medicine.id),
     name: medicine.name,
-    genericName: medicine.genericName ?? "Not available",
-    manufacturer: medicine.manufacturer?.name ?? "Not available",
-    category: medicine.category?.name ?? "Uncategorized",
-    sku: medicine.sku,
-    pack: medicine.packSize,
-    price: medicine.sellingPrice,
+    genericName: "Not available",
+    manufacturer: "Shweta Drug Distributors",
+    category: "Medicine",
+    sku: medicine.batch,
+    pack: medicine.packing ?? "Not available",
+    price: ptr,
     mrp: medicine.mrp,
-    stock: medicine.availableStock,
-    batch: firstBatch?.batchNumber ?? "Not available",
-    expiry: formatExpiry(firstBatch?.expiryDate),
-    gst: medicine.gstPercent,
-    margin: medicine.marginPercent ?? 0,
+    stock: medicine.stock,
+    batch: medicine.batch,
+    expiry: formatExpiry(medicine.expiry_date),
+    gst: 0,
+    margin: medicine.max_discount_percent ?? 0,
     alternatives: [],
-    status: toMedicineStatus(medicine),
+    status: medicine.stock <= 0 ? "Out" : medicine.stock <= 20 ? "Limited" : "In Stock",
   };
+}
+
+async function fetchAllMedicines(search = "") {
+  const firstResponse = await api.get<ApiResponse<BackendMedicine[]> & { meta: MedicineListMeta }>("/medicines", {
+    params: { page: 1, per_page: 100, search, sort: "asc" },
+  });
+  const firstPage = firstResponse.data.data;
+  const totalPages = firstResponse.data.meta?.pagination?.total_pages ?? 1;
+
+  if (totalPages <= 1) return firstPage.map(mapMedicine);
+
+  const remaining = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      api.get<ApiResponse<BackendMedicine[]>>("/medicines", {
+        params: { page: index + 2, per_page: 100, search, sort: "asc" },
+      }),
+    ),
+  );
+
+  return firstPage.concat(remaining.flatMap((response) => response.data.data)).map(mapMedicine);
 }
 
 export const medicineService = {
   async getMedicines() {
-    const response = await api.get<ApiResponse<BackendMedicine[]>>("/medicines", {
-      params: { limit: 100, status: "ACTIVE" },
-    });
-    return response.data.data.map(mapMedicine);
+    return fetchAllMedicines();
   },
 
   async searchMedicines(query: string) {
-    const response = await api.get<ApiResponse<BackendMedicine[]>>("/medicines/search", {
-      params: { q: query, limit: 100, status: "ACTIVE" },
-    });
-    return response.data.data.map(mapMedicine);
+    return fetchAllMedicines(query);
+  },
+
+  async getMedicine(id: string) {
+    const response = await api.get<ApiResponse<BackendMedicine>>(`/medicines/${id}`);
+    return mapMedicine(response.data.data);
   },
 };

@@ -180,7 +180,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         await runCartAction(async () => {
-          let syncedItems = await cartService.clearCart();
+          let syncedItems: CartItem[] = await cartService.clearCart();
           for (const item of nextItems) {
             syncedItems = await cartService.addItem(item.medicineId, item.qty);
           }

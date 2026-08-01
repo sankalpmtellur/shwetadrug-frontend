@@ -3,42 +3,35 @@ import type { ApiResponse } from "../types/auth";
 import type { CartItem } from "../types";
 
 type BackendCartItem = {
-  id: string;
-  medicineId: string;
+  medicine_id: number;
+  name: string;
+  batch: string;
+  mrp: number;
+  ptr: number;
+  stock: number;
+  packing: string;
+  max_discount_percent: number;
+  expiry_date: string;
   quantity: number;
-  unitPrice: number;
-  amount: number;
-  medicine: {
-    id: string;
-    sku: string;
-    name: string;
-    genericName: string;
-    packSize: string;
-    status: string;
-    category: string;
-    manufacturer: string;
-  };
+  line_total: number;
 };
 
 type BackendCart = {
-  id: string;
-  retailerId: string;
   items: BackendCartItem[];
-  subtotal: number;
-  createdAt: string;
-  updatedAt: string;
+  total_items: number;
+  total_amount: number;
 };
 
 export function mapBackendCart(cart: BackendCart): CartItem[] {
   return cart.items.map((item) => ({
-    medicineId: item.medicineId,
-    name: item.medicine.name,
-    sku: item.medicine.sku,
+    medicineId: String(item.medicine_id),
+    name: item.name,
+    sku: item.batch,
     qty: item.quantity,
-    pack: item.medicine.packSize,
-    unitPrice: item.unitPrice,
-    amount: item.amount,
-    status: "In Stock",
+    pack: item.packing,
+    unitPrice: item.quantity > 0 ? item.line_total / item.quantity : item.ptr,
+    amount: item.line_total,
+    status: item.stock <= 20 ? "Limited" : "In Stock",
   }));
 }
 
@@ -49,22 +42,35 @@ export const cartService = {
   },
 
   async addItem(medicineId: string, quantity: number) {
-    const response = await api.post<ApiResponse<BackendCart>>("/cart/items", { medicineId, quantity });
+    const response = await api.post<ApiResponse<BackendCart>>("/cart/add", {
+      medicine_id: Number(medicineId),
+      quantity,
+    });
     return mapBackendCart(response.data.data);
   },
 
   async updateItem(medicineId: string, quantity: number) {
-    const response = await api.patch<ApiResponse<BackendCart>>(`/cart/items/${medicineId}`, { quantity });
+    if (quantity <= 0) return this.removeItem(medicineId);
+
+    const response = await api.put<ApiResponse<BackendCart>>("/cart/update", {
+      medicine_id: Number(medicineId),
+      quantity,
+    });
     return mapBackendCart(response.data.data);
   },
 
   async removeItem(medicineId: string) {
-    const response = await api.delete<ApiResponse<BackendCart>>(`/cart/items/${medicineId}`);
+    const response = await api.delete<ApiResponse<BackendCart>>("/cart/remove", {
+      data: { medicine_id: Number(medicineId) },
+    });
     return mapBackendCart(response.data.data);
   },
 
-  async clearCart() {
-    const response = await api.delete<ApiResponse<BackendCart>>("/cart");
-    return mapBackendCart(response.data.data);
+  async clearCart(): Promise<CartItem[]> {
+    const currentItems = await this.getCart();
+    for (const item of currentItems) {
+      await this.removeItem(item.medicineId);
+    }
+    return [];
   },
 };

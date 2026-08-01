@@ -120,6 +120,15 @@ export default function Dashboard() {
     }
   };
 
+  const showMedicineDetails = async (medicine: Medicine) => {
+    setSelectedMedicine(medicine);
+    try {
+      setSelectedMedicine(await medicineService.getMedicine(medicine.id));
+    } catch {
+      toast.error("Could not load medicine details.");
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-5">
@@ -174,7 +183,7 @@ export default function Dashboard() {
                           <h2 className="break-words text-base font-black leading-snug text-navy">{medicine.name}</h2>
                           <p className="mt-1 break-words text-sm font-semibold text-muted">{medicine.manufacturer} | {medicine.pack}</p>
                         </div>
-                        <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-soft text-primary transition hover:bg-surface-strong" onClick={() => setSelectedMedicine(medicine)} aria-label={`View ${medicine.name} details`}>
+                        <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-soft text-primary transition hover:bg-surface-strong" onClick={() => void showMedicineDetails(medicine)} aria-label={`View ${medicine.name} details`}>
                           <Info className="h-5 w-5" />
                         </button>
                       </div>
@@ -263,8 +272,8 @@ export default function Dashboard() {
             <div className="grid gap-3 sm:grid-cols-2">
               <Detail label="Available Stock" value={`${selectedMedicine.stock} units`} />
               <Detail label="MRP" value={currency(selectedMedicine.mrp)} />
-              <Detail label="Selling Price" value={currency(selectedMedicine.price)} />
-              <Detail label="GST" value={`${selectedMedicine.gst}%`} />
+              <Detail label="PTR" value={currency(selectedMedicine.price)} />
+              <Detail label="Max discount" value={`${selectedMedicine.margin}%`} />
               <Detail label="Manufacturer" value={selectedMedicine.manufacturer} />
               <Detail label="Pack Size" value={selectedMedicine.pack} />
             </div>

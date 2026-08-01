@@ -9,49 +9,78 @@ import type {
   SignupOtpRequestPayload,
   SignupOtpVerifyPayload,
   SignupOtpVerifyResponse,
+  User,
 } from "../types/auth";
 
-let refreshPromise: Promise<AuthResponse> | null = null;
+type BackendRetailer = {
+  id: number;
+  retailer_code: string;
+  owner_name: string;
+  pharmacy_name: string;
+  phone: string;
+  email: string | null;
+  address: string;
+  status: string;
+};
+
+function toAuthResponse(retailer: BackendRetailer): AuthResponse {
+  const user: User = {
+    id: String(retailer.id),
+    email: retailer.email ?? "",
+    name: retailer.owner_name,
+    role: "RETAILER",
+    retailerId: String(retailer.id),
+    phone: retailer.phone,
+    status: retailer.status,
+  };
+
+  return { user };
+}
 
 export const authService = {
   async login(payload: LoginPayload) {
-    const response = await api.post<ApiResponse<AuthResponse>>("/auth/login", payload);
-    return response.data.data;
+    const response = await api.post<ApiResponse<BackendRetailer>>("/retailer/login", payload);
+    return toAuthResponse(response.data.data);
   },
 
   async logout() {
-    await api.post("/auth/logout");
+    await api.post("/retailer/logout");
   },
 
   async refreshToken() {
-    refreshPromise ??= api.post<ApiResponse<AuthResponse>>("/auth/refresh-token", {}).then((response) => response.data.data).finally(() => {
-      refreshPromise = null;
-    });
-    return refreshPromise;
+    const response = await api.get<ApiResponse<BackendRetailer>>("/retailer/profile");
+    return toAuthResponse(response.data.data);
   },
 
   async retailerSignup(payload: RetailerSignupPayload) {
-    const response = await api.post("/auth/retailer-signup", payload);
+    const address = [payload.address, payload.city, payload.state, payload.pincode].filter(Boolean).join(", ");
+    const response = await api.post("/retailer/signup", {
+      owner_name: payload.ownerName,
+      pharmacy_name: payload.pharmacyName,
+      phone: payload.phone,
+      email: payload.email || null,
+      address,
+      password: payload.password,
+    });
     return response.data;
   },
 
-  async requestSignupOtp(payload: SignupOtpRequestPayload) {
-    const response = await api.post("/auth/signup/request-otp", payload);
-    return response.data;
+  async requestSignupOtp(_payload: SignupOtpRequestPayload) {
+    return { success: true, message: "Mobile verification skipped for this launch." };
   },
 
-  async verifySignupOtp(payload: SignupOtpVerifyPayload) {
-    const response = await api.post<ApiResponse<SignupOtpVerifyResponse>>("/auth/signup/verify-otp", payload);
-    return response.data.data;
+  async verifySignupOtp(payload: SignupOtpVerifyPayload): Promise<SignupOtpVerifyResponse> {
+    return {
+      verificationToken: `verified-${payload.phone}`,
+      expiresInSeconds: 3600,
+    };
   },
 
-  async forgotPassword(payload: ForgotPasswordPayload) {
-    const response = await api.post("/auth/forgot-password", payload);
-    return response.data;
+  async forgotPassword(_payload: ForgotPasswordPayload) {
+    throw new Error("Password reset is handled manually for launch.");
   },
 
-  async resetPassword(payload: ResetPasswordPayload) {
-    const response = await api.post("/auth/reset-password", payload);
-    return response.data;
+  async resetPassword(_payload: ResetPasswordPayload) {
+    throw new Error("Password reset is handled manually for launch.");
   },
 };

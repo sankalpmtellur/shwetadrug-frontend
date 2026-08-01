@@ -1,16 +1,8 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { clearAuth, getAccessToken, getCsrfToken, saveAuth } from "./auth";
-import type { ApiResponse, AuthResponse } from "../types/auth";
-
-type RetryableRequest = InternalAxiosRequestConfig & {
-  _retry?: boolean;
-};
-
-const portalRoleHeader = { "X-Portal-Role": "RETAILER" };
-let refreshRequest: Promise<{ data: ApiResponse<AuthResponse> }> | null = null;
+import axios from "axios";
+import { clearAuth, getUser } from "./auth";
 
 function getApiBaseUrl() {
-  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:5001/api/v1" : "")).trim();
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "http://127.0.0.1:8000/api" : "")).trim();
   if (!apiBaseUrl) {
     const message = "VITE_API_BASE_URL is required. Refusing to call relative frontend URLs for API requests.";
     console.error(message);
@@ -24,85 +16,37 @@ function getApiBaseUrl() {
   return apiBaseUrl;
 }
 
-const apiBaseUrl = getApiBaseUrl();
-
 export const api = axios.create({
-  baseURL: apiBaseUrl,
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
-  headers: portalRoleHeader,
-});
-
-function isCsrfProtectedUrl(url?: string) {
-  return Boolean(url?.includes("/auth/logout"));
-}
-
-function getCsrfHeaders() {
-  const token = getCsrfToken();
-  return token ? { "X-CSRF-Token": token } : {};
-}
-
-function refreshSession() {
-  refreshRequest ??= axios
-    .post<ApiResponse<AuthResponse>>(
-      `${apiBaseUrl}/auth/refresh-token`,
-      {},
-      { withCredentials: true, headers: { ...portalRoleHeader, ...getCsrfHeaders() } },
-    )
-    .finally(() => {
-      refreshRequest = null;
-    });
-
-  return refreshRequest;
-}
-
-api.interceptors.request.use((config) => {
-  const token = getAccessToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  const csrfToken = getCsrfToken();
-  if (csrfToken && isCsrfProtectedUrl(config.url)) {
-    (config.headers as Record<string, string>)["X-CSRF-Token"] = csrfToken;
-  }
-  return config;
 });
 
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as RetryableRequest | undefined;
-
-    if (
-      error.response?.status !== 401 ||
-      !originalRequest ||
-      originalRequest._retry ||
-      originalRequest.url?.includes("/auth/refresh-token")
-    ) {
-      return Promise.reject(error);
-    }
-
-    originalRequest._retry = true;
-
-    try {
-      const response = await refreshSession();
-
-      if (response.data.data.user.role !== "RETAILER") {
-        clearAuth();
-        window.location.assign("/login");
-        return Promise.reject(refreshErrorForRole());
-      }
-
-      saveAuth(response.data.data);
-      originalRequest.headers.Authorization = `Bearer ${response.data.data.accessToken}`;
-      return api(originalRequest);
-    } catch (refreshError) {
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401 && getUser() && !window.location.pathname.includes("/login")) {
       clearAuth();
       window.location.assign("/login");
-      return Promise.reject(refreshError);
     }
+
+    return Promise.reject(error);
   },
 );
 
-function refreshErrorForRole() {
-  return new Error("Please use the correct portal for this account.");
+export function getApiErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { message?: string } | undefined;
+    return data?.message ?? fallbackForStatus(error.response?.status, fallback);
+  }
+
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function fallbackForStatus(status: number | undefined, fallback: string) {
+  if (status === 401) return "Your session has expired. Please login again.";
+  if (status === 404) return "The requested item was not found.";
+  if (status === 422) return "Please check the entered details and try again.";
+  if (status === 429) return "Too many requests. Please wait a moment and try again.";
+  if (status && status >= 500) return "Server error. Please try again later.";
+  return fallback;
 }

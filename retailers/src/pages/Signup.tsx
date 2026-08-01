@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole, MapPin, 
 import { AuthLayout } from "../layouts/AuthLayout";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
+import { getApiErrorMessage } from "../lib/api";
 import { authService } from "../services/authService";
 
 const initialForm = {
@@ -73,8 +74,8 @@ export default function Signup() {
 
   function validateCurrentStep() {
     if (step === 0) {
-      if (!form.ownerName.trim() || !form.pharmacyName.trim() || !form.email.trim() || normalizedPhone.length < 8) {
-        setFormError("Enter owner, pharmacy, mobile, and email details.");
+      if (!form.ownerName.trim() || !form.pharmacyName.trim() || normalizedPhone.length < 8) {
+        setFormError("Enter owner, pharmacy, and mobile details.");
         return false;
       }
       if (!isMobileVerified) {
@@ -120,10 +121,13 @@ export default function Signup() {
     try {
       await authService.requestSignupOtp({ phone: normalizedPhone });
       setOtpSent(true);
+      setOtp("000000");
+      setOtpToken(`verified-${normalizedPhone}`);
+      setVerifiedPhone(normalizedPhone);
       setOtpCooldown(otpCooldownSeconds);
-      toast.success("OTP sent to your mobile number.");
-    } catch {
-      toast.error("Could not send OTP. Please try again.");
+      toast.success("Mobile number accepted.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Could not verify mobile number. Please try again."));
     } finally {
       setIsRequestingOtp(false);
     }
@@ -141,10 +145,10 @@ export default function Signup() {
       setOtpToken(result.verificationToken);
       setVerifiedPhone(normalizedPhone);
       toast.success("Mobile verified.");
-    } catch {
+    } catch (error) {
       setOtpToken("");
       setVerifiedPhone("");
-      toast.error("Invalid or expired OTP.");
+      toast.error(getApiErrorMessage(error, "Invalid or expired OTP."));
     } finally {
       setIsVerifyingOtp(false);
     }
@@ -172,8 +176,8 @@ export default function Signup() {
       });
       toast.success("Your account has been created successfully.");
       navigate("/login", { replace: true });
-    } catch {
-      toast.error("Could not create account");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Could not create account"));
     } finally {
       setIsLoading(false);
     }

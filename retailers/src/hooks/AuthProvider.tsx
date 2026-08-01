@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       profile,
-      isAuthenticated: Boolean(user && getAccessToken()),
+      isAuthenticated: Boolean(user),
       isLoading,
       logout,
       refreshProfile: restoreSession,
