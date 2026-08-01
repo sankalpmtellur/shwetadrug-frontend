@@ -19,14 +19,11 @@ export default function Checkout() {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [addressLoadFailed, setAddressLoadFailed] = useState(false);
   const navigate = useNavigate();
-  const gst = Math.round(subtotal * 0.12);
-  const discount = 0;
-  const deliveryCharge = 0;
-  const payableAmount = subtotal - discount + gst + deliveryCharge;
+  const payableAmount = subtotal;
   const hasDeliveryAddress = Boolean(defaultAddress?.id);
   const deliveryAddressText = hasDeliveryAddress
     ? formatDefaultAddress(defaultAddress)
-    : "Please update your delivery address in Profile before placing an order.";
+    : "Delivery address is not available for this account. Contact the distributor to update it.";
   const deliveryAddressId = defaultAddress?.id;
 
   useEffect(() => {
@@ -47,7 +44,12 @@ export default function Checkout() {
   async function confirmOrder() {
     if (!items.length || isCreatingOrder) return;
     if (!hasDeliveryAddress) {
-      toast.error("Please update your delivery address in Profile before placing an order.");
+      toast.error("Delivery address is required before placing an order.");
+      return;
+    }
+
+    const confirmed = window.confirm(`Place this order for ${currency(payableAmount)}?`);
+    if (!confirmed) {
       return;
     }
 
@@ -96,11 +98,8 @@ export default function Checkout() {
                     <div>
                       <p className="font-black text-navy">Default delivery address</p>
                       <p className="mt-1 text-sm font-semibold leading-6 text-muted">{deliveryAddressText}</p>
-                      {addressLoadFailed ? <p className="mt-2 text-xs font-bold text-error">Could not verify the saved address. Please retry from Profile.</p> : null}
+                      {addressLoadFailed ? <p className="mt-2 text-xs font-bold text-error">Could not verify the saved address. Please refresh and try again.</p> : null}
                     </div>
-                    <Link to="/profile" className="shrink-0 text-sm font-black text-primary">
-                      {hasDeliveryAddress ? "Edit address" : "Add address"}
-                    </Link>
                   </div>
                 </div>
               </Section>
@@ -124,8 +123,9 @@ export default function Checkout() {
                         <QuantityControl
                           name={item.name}
                           qty={item.qty}
-                          onDecrease={() => void setItemQuantity(item.medicineId, item.qty - 1)}
-                          onIncrease={() => void setItemQuantity(item.medicineId, item.qty + 1)}
+                          max={item.stock}
+                          onDecrease={() => void updateCartQuantity(item.medicineId, item.qty - 1)}
+                          onIncrease={() => void updateCartQuantity(item.medicineId, item.qty + 1, item.stock)}
                         />
                         <div className="flex items-center justify-between gap-3 md:justify-end">
                           <p className="font-black text-primary">{currency(item.amount)}</p>
@@ -144,11 +144,9 @@ export default function Checkout() {
               <Card className="p-5">
                 <h2 className="mb-4 text-lg font-black text-navy">Price Summary</h2>
                 <SummaryRow label="Subtotal" value={currency(subtotal)} />
-                <SummaryRow label="Discount" value={discount ? currency(discount) : "-"} />
-                <SummaryRow label="GST" value={currency(gst)} />
-                <SummaryRow label="Delivery charge" value={deliveryCharge ? currency(deliveryCharge) : "Free"} />
+                <SummaryRow label="Delivery charge" value="As applicable" />
                 <div className="my-4 border-t border-border" />
-                <SummaryRow label="Final payable" value={currency(payableAmount)} strong />
+                <SummaryRow label="Order total" value={currency(payableAmount)} strong />
               </Card>
 
               <Card className="p-5">
@@ -168,6 +166,15 @@ export default function Checkout() {
       </PageWrapper>
     </DashboardLayout>
   );
+
+  function updateCartQuantity(medicineId: string, qty: number, stock?: number) {
+    if (stock !== undefined && qty > stock) {
+      toast.error(`Only ${stock} units are available.`);
+      return;
+    }
+
+    void setItemQuantity(medicineId, qty);
+  }
 }
 
 function Section({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
@@ -182,16 +189,19 @@ function Section({ title, icon, children }: { title: string; icon: ReactNode; ch
   );
 }
 
-function QuantityControl({ name, qty, onDecrease, onIncrease }: { name: string; qty: number; onDecrease: () => void; onIncrease: () => void }) {
+function QuantityControl({ name, qty, max, onDecrease, onIncrease }: { name: string; qty: number; max: number; onDecrease: () => void; onIncrease: () => void }) {
   return (
-    <div className="flex w-fit overflow-hidden rounded-lg border border-border bg-white md:mx-auto">
-      <button type="button" onClick={onDecrease} className="grid h-9 w-9 place-items-center text-muted" aria-label={`Decrease ${name}`}>
-        <Minus className="h-4 w-4" />
-      </button>
-      <span className="grid h-9 min-w-10 place-items-center border-x border-border px-2 text-sm font-black text-navy">{qty}</span>
-      <button type="button" onClick={onIncrease} className="grid h-9 w-9 place-items-center text-muted" aria-label={`Increase ${name}`}>
-        <Plus className="h-4 w-4" />
-      </button>
+    <div className="md:mx-auto">
+      <div className="flex w-fit overflow-hidden rounded-lg border border-border bg-white">
+        <button type="button" onClick={onDecrease} disabled={qty <= 1} className="grid h-9 w-9 place-items-center text-muted disabled:opacity-40" aria-label={`Decrease ${name}`}>
+          <Minus className="h-4 w-4" />
+        </button>
+        <span className="grid h-9 min-w-10 place-items-center border-x border-border px-2 text-sm font-black text-navy">{qty}</span>
+        <button type="button" onClick={onIncrease} disabled={qty >= max} className="grid h-9 w-9 place-items-center text-muted disabled:opacity-40" aria-label={`Increase ${name}`}>
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+      {qty >= max ? <p className="mt-1 text-xs font-bold text-orange-700">Max stock</p> : null}
     </div>
   );
 }

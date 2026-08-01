@@ -29,7 +29,8 @@ export function BottomCartBar() {
             <button
               type="button"
               onClick={() => setItemQuantity(latestItem.medicineId, latestItem.qty - 1)}
-              className="grid h-11 w-10 place-items-center text-muted"
+              disabled={latestItem.qty <= 1}
+              className="grid h-11 w-10 place-items-center text-muted disabled:opacity-40"
               aria-label={`Decrease ${latestItem.name}`}
             >
               <Minus className="h-4 w-4" />
@@ -40,7 +41,8 @@ export function BottomCartBar() {
             <button
               type="button"
               onClick={() => setItemQuantity(latestItem.medicineId, latestItem.qty + 1)}
-              className="grid h-11 w-10 place-items-center text-muted"
+              disabled={latestItem.qty >= latestItem.stock}
+              className="grid h-11 w-10 place-items-center text-muted disabled:opacity-40"
               aria-label={`Increase ${latestItem.name}`}
             >
               <Plus className="h-4 w-4" />

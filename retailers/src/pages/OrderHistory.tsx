@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Download, FileText, Share2, X } from "lucide-react";
+import { ArrowLeft, FileText, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
@@ -26,8 +26,6 @@ export default function OrderHistory() {
   const [invoice, setInvoice] = useState<OrderInvoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
-  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
-  const [isSharingInvoice, setIsSharingInvoice] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const { reorderItems } = useCart();
   const selectedOrder = orders.find((order) => order.id === selectedOrderId);
@@ -85,51 +83,9 @@ export default function OrderHistory() {
         pack: item.packSize,
         unitPrice: item.unitPrice,
         amount: item.unitPrice * item.quantity,
+        stock: item.quantity,
         status: "In Stock",
       }));
-  };
-
-  const downloadInvoice = async () => {
-    if (!selectedOrder) return;
-
-    setIsDownloadingInvoice(true);
-    try {
-      const blob = await orderService.downloadOrderInvoicePdf(selectedOrder.id);
-      saveInvoiceBlob(blob, selectedOrder);
-      toast.success("Invoice PDF downloaded.");
-    } catch (error) {
-      toast.error(getInvoiceErrorMessage(error, "Could not download invoice PDF."));
-    } finally {
-      setIsDownloadingInvoice(false);
-    }
-  };
-
-  const shareInvoice = async () => {
-    if (!selectedOrder) return;
-
-    setIsSharingInvoice(true);
-    try {
-      const blob = await orderService.downloadOrderInvoicePdf(selectedOrder.id);
-      const invoiceNo = invoice?.invoice.invoiceNo ?? selectedOrder.invoice?.invoiceNo ?? selectedOrder.orderNo;
-      const file = new File([blob], getInvoiceFileName(selectedOrder), { type: "application/pdf" });
-      const shareData: ShareData = {
-        files: [file],
-        title: `Invoice ${invoiceNo}`,
-        text: `Invoice ${invoiceNo} for ${currency(selectedOrder.totalAmount)}`,
-      };
-
-      if (navigator.share && navigator.canShare?.(shareData)) {
-        await navigator.share(shareData);
-        return;
-      }
-
-      saveInvoiceBlob(blob, selectedOrder);
-      toast.success("Invoice PDF downloaded. Share it from your device.");
-    } catch (error) {
-      toast.error(getInvoiceErrorMessage(error, "Could not share invoice PDF."));
-    } finally {
-      setIsSharingInvoice(false);
-    }
   };
 
   function handleReorder(order: RetailerOrder) {
@@ -185,17 +141,16 @@ export default function OrderHistory() {
               <Card key={order.id} className="p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted">
-                      {formatDate(order.placedAt)}
-                    </p>
-                    <h2 className="mt-1 text-lg font-black text-primary">{order.orderNo}</h2>
-                    <p className="mt-1 text-sm font-semibold text-muted">
-                      {order.items.length} items | {currency(order.totalAmount)}
-                    </p>
+                    <h2 className="text-lg font-black text-primary">{order.orderNo}</h2>
+                    <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                      <OrderFact label="Date" value={formatDate(order.placedAt)} />
+                      <OrderFact label="Total" value={currency(order.totalAmount)} />
+                      <OrderFact label="Status" value={order.status} />
+                    </div>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button type="button" variant="secondary" onClick={() => void openBill(order.id)}>
-                      View Bill
+                      View Details
                     </Button>
                     <Button type="button" onClick={() => handleReorder(order)}>
                       Reorder
@@ -215,7 +170,7 @@ export default function OrderHistory() {
           </div>
         ) : null}
 
-        <Modal open={Boolean(selectedOrder)} title="View Bill" onClose={closeBill}>
+        <Modal open={Boolean(selectedOrder)} title="Order Details" onClose={closeBill}>
           {selectedOrder ? (
             <div className="space-y-4">
               <InvoiceHeader selectedOrder={selectedOrder} invoice={invoice} />
@@ -226,15 +181,7 @@ export default function OrderHistory() {
               <InvoiceItems selectedOrder={selectedOrder} invoice={invoice} />
               <InvoiceTotals selectedOrder={selectedOrder} invoice={invoice} />
 
-              <div className="sticky bottom-0 -mx-3 grid gap-2 border-t border-border bg-white p-3 sm:-mx-4 sm:grid-cols-3 sm:p-4">
-                <Button type="button" variant="secondary" onClick={downloadInvoice} disabled={isDownloadingInvoice || isSharingInvoice}>
-                  <Download className="h-4 w-4" />
-                  {isDownloadingInvoice ? "Downloading..." : "Download"}
-                </Button>
-                <Button type="button" onClick={shareInvoice} disabled={isDownloadingInvoice || isSharingInvoice}>
-                  <Share2 className="h-4 w-4" />
-                  {isSharingInvoice ? "Preparing..." : "Share"}
-                </Button>
+              <div className="sticky bottom-0 -mx-3 border-t border-border bg-white p-3 sm:-mx-4 sm:p-4">
                 <Button type="button" variant="ghost" onClick={closeBill}>
                   <X className="h-4 w-4" />
                   Close
@@ -245,6 +192,15 @@ export default function OrderHistory() {
         </Modal>
       </PageWrapper>
     </DashboardLayout>
+  );
+}
+
+function OrderFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-surface-soft px-3 py-2">
+      <p className="text-[11px] font-black uppercase tracking-widest text-muted">{label}</p>
+      <p className="mt-1 break-words font-black text-navy">{value}</p>
+    </div>
   );
 }
 
@@ -364,26 +320,6 @@ function SummaryRow({ label, value, strong }: { label: string; value: string; st
 function formatInvoiceAddress(address?: { line1: string; line2: string | null; city: string; state: string; pincode: string } | null) {
   if (!address) return "Address not available.";
   return [address.line1, address.line2, address.city, address.state, address.pincode].filter(Boolean).join(", ");
-}
-
-function saveInvoiceBlob(blob: Blob, order: RetailerOrder) {
-  const url = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = getInvoiceFileName(order);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function getInvoiceFileName(order: RetailerOrder) {
-  return `${order.orderNo}-invoice.pdf`.replace(/[^a-zA-Z0-9._-]/g, "-");
-}
-
-function getInvoiceErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
 }
 
 function useResponsivePageSize() {

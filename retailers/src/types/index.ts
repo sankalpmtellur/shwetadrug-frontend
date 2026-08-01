@@ -25,6 +25,7 @@ export type CartItem = {
   pack: string;
   unitPrice: number;
   amount: number;
+  stock: number;
   status: "In Stock" | "Limited";
 };
 
@@ -65,6 +66,7 @@ export type CreatedOrder = {
   status: string;
   totalAmount: number;
   createdAt: string;
+  items: CartItem[];
 };
 
 export type BackendOrderStatus =

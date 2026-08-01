@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Info, Minus, PackageCheck, Plus, Search, ShoppingBag, ShoppingCart } from "lucide-react";
+import { Info, Minus, PackageCheck, Plus, Search, ShoppingCart } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "../components/common/Button";
 import { Modal } from "../components/common/Modal";
@@ -27,7 +26,6 @@ function usePageSize() {
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -71,7 +69,7 @@ export default function Dashboard() {
       }
     }
 
-    const timeoutId = window.setTimeout(loadMedicines, query ? 250 : 0);
+    const timeoutId = window.setTimeout(loadMedicines, query ? 300 : 0);
 
     return () => {
       controller.abort();
@@ -96,7 +94,7 @@ export default function Dashboard() {
     setRequestedQty((current) => ({ ...current, [medicine.id]: nextQty }));
   }
 
-  const updateCart = async (medicine: Medicine, action: "cart" | "buy") => {
+  const updateCart = async (medicine: Medicine) => {
     if (medicine.status === "Out" || medicine.stock <= 0 || pendingMedicineId) return;
 
     const qty = selectedQuantity(medicine);
@@ -110,10 +108,6 @@ export default function Dashboard() {
       } else {
         await addItem(medicine, qty);
         toast.success(`${qty} units added to cart.`);
-      }
-
-      if (action === "buy") {
-        navigate("/checkout");
       }
     } finally {
       setPendingMedicineId(null);
@@ -176,12 +170,12 @@ export default function Dashboard() {
 
               return (
                 <article key={medicine.id} className="rounded-lg border border-border bg-white p-4 shadow-sm transition hover:border-primary/30">
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_260px] lg:items-center">
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px_220px] lg:items-center">
                     <div className="min-w-0">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <h2 className="break-words text-base font-black leading-snug text-navy">{medicine.name}</h2>
-                          <p className="mt-1 break-words text-sm font-semibold text-muted">{medicine.manufacturer} | {medicine.pack}</p>
+                          <p className="mt-1 break-words text-sm font-semibold text-muted">Batch: {medicine.batch}</p>
                         </div>
                         <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-soft text-primary transition hover:bg-surface-strong" onClick={() => void showMedicineDetails(medicine)} aria-label={`View ${medicine.name} details`}>
                           <Info className="h-5 w-5" />
@@ -195,12 +189,12 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+                    <div className="grid grid-cols-2 gap-3">
                       <PriceLine label="MRP" value={currency(medicine.mrp)} />
-                      <PriceLine label="Retailer price" value={currency(medicine.price)} strong />
+                      <PriceLine label="Expiry" value={medicine.expiry} />
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-[150px_1fr] lg:grid-cols-1">
+                    <div className="grid gap-3">
                       <QuantitySelector
                         medicineName={medicine.name}
                         value={qty}
@@ -208,26 +202,15 @@ export default function Dashboard() {
                         disabled={isOut || isPending}
                         onChange={(value) => setQuantity(medicine, value)}
                       />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          disabled={isOut || isPending}
-                          variant={isOut ? "ghost" : "secondary"}
-                          className="h-11 px-2 text-sm"
-                          onClick={() => void updateCart(medicine, "cart")}
-                        >
-                          <ShoppingCart className="h-4 w-4" />
-                          {currentCartQty > 0 ? "Update" : "Add"}
-                        </Button>
-                        <Button
-                          disabled={isOut || isPending}
-                          variant={isOut ? "ghost" : "primary"}
-                          className="h-11 px-2 text-sm"
-                          onClick={() => void updateCart(medicine, "buy")}
-                        >
-                          <ShoppingBag className="h-4 w-4" />
-                          Buy Now
-                        </Button>
-                      </div>
+                      <Button
+                        disabled={isOut || isPending}
+                        variant={isOut ? "ghost" : "primary"}
+                        className="h-11 px-2 text-sm"
+                        onClick={() => void updateCart(medicine)}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        {currentCartQty > 0 ? "Update Cart" : "Add to Cart"}
+                      </Button>
                     </div>
                   </div>
                 </article>
@@ -246,7 +229,7 @@ export default function Dashboard() {
 
         {!isLoading && !errorMessage && medicines.length === 0 ? (
           <div className="rounded-lg border border-border bg-white p-8 text-center shadow-sm">
-            <h2 className="text-lg font-black text-navy">No medicine found</h2>
+            <h2 className="text-lg font-black text-navy">No medicines found</h2>
             <p className="mt-2 text-sm text-muted">Try another name or SKU.</p>
           </div>
         ) : null}
@@ -270,12 +253,12 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Detail label="Available Stock" value={`${selectedMedicine.stock} units`} />
-              <Detail label="MRP" value={currency(selectedMedicine.mrp)} />
               <Detail label="PTR" value={currency(selectedMedicine.price)} />
-              <Detail label="Max discount" value={`${selectedMedicine.margin}%`} />
-              <Detail label="Manufacturer" value={selectedMedicine.manufacturer} />
-              <Detail label="Pack Size" value={selectedMedicine.pack} />
+              <Detail label="Packing" value={selectedMedicine.pack} />
+              <Detail label="Maximum Discount %" value={`${selectedMedicine.margin}%`} />
+              <Detail label="Batch" value={selectedMedicine.batch} />
+              <Detail label="Expiry" value={selectedMedicine.expiry} />
+              <Detail label="Stock" value={`${selectedMedicine.stock} units`} />
             </div>
           </div>
         ) : null}

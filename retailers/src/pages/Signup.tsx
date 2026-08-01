@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole, MapPin, Send, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole, MapPin, UserRound } from "lucide-react";
 import { AuthLayout } from "../layouts/AuthLayout";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
@@ -28,31 +28,15 @@ const steps = [
   { id: 2, label: "Security", icon: LockKeyhole },
 ];
 
-const otpCooldownSeconds = 45;
-
 export default function Signup() {
   const [form, setForm] = useState(initialForm);
   const [step, setStep] = useState(0);
-  const [verifiedPhone, setVerifiedPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpToken, setOtpToken] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCooldown, setOtpCooldown] = useState(0);
-  const [isRequestingOtp, setIsRequestingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [formError, setFormError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const normalizedPhone = form.phone.trim();
-  const isMobileVerified = Boolean(otpToken) && verifiedPhone === normalizedPhone;
-
-  useEffect(() => {
-    if (otpCooldown <= 0) return;
-    const timerId = window.setTimeout(() => setOtpCooldown((current) => Math.max(0, current - 1)), 1000);
-    return () => window.clearTimeout(timerId);
-  }, [otpCooldown]);
 
   const passwordSummary = useMemo(() => {
     const checks = [
@@ -65,21 +49,12 @@ export default function Signup() {
   function updateField(field: keyof typeof initialForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
     setFormError("");
-    if (field === "phone") {
-      setVerifiedPhone("");
-      setOtpToken("");
-      setOtp("");
-    }
   }
 
   function validateCurrentStep() {
     if (step === 0) {
       if (!form.ownerName.trim() || !form.pharmacyName.trim() || normalizedPhone.length < 8) {
         setFormError("Enter owner, pharmacy, and mobile details.");
-        return false;
-      }
-      if (!isMobileVerified) {
-        setFormError("Verify your mobile number before continuing.");
         return false;
       }
     }
@@ -111,49 +86,6 @@ export default function Signup() {
     setStep((current) => Math.min(steps.length - 1, current + 1));
   }
 
-  async function handleRequestOtp() {
-    if (normalizedPhone.length < 8) {
-      toast.error("Enter a valid mobile number.");
-      return;
-    }
-
-    setIsRequestingOtp(true);
-    try {
-      await authService.requestSignupOtp({ phone: normalizedPhone });
-      setOtpSent(true);
-      setOtp("000000");
-      setOtpToken(`verified-${normalizedPhone}`);
-      setVerifiedPhone(normalizedPhone);
-      setOtpCooldown(otpCooldownSeconds);
-      toast.success("Mobile number accepted.");
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, "Could not verify mobile number. Please try again."));
-    } finally {
-      setIsRequestingOtp(false);
-    }
-  }
-
-  async function handleVerifyOtp() {
-    if (!/^\d{6}$/.test(otp.trim())) {
-      toast.error("Enter the 6 digit OTP.");
-      return;
-    }
-
-    setIsVerifyingOtp(true);
-    try {
-      const result = await authService.verifySignupOtp({ phone: normalizedPhone, otp: otp.trim() });
-      setOtpToken(result.verificationToken);
-      setVerifiedPhone(normalizedPhone);
-      toast.success("Mobile verified.");
-    } catch (error) {
-      setOtpToken("");
-      setVerifiedPhone("");
-      toast.error(getApiErrorMessage(error, "Invalid or expired OTP."));
-    } finally {
-      setIsVerifyingOtp(false);
-    }
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!validateCurrentStep()) return;
@@ -172,7 +104,6 @@ export default function Signup() {
         pincode: form.pincode.trim(),
         password: form.password,
         confirmPassword: form.confirmPassword,
-        otpVerificationToken: otpToken,
       });
       toast.success("Your account has been created successfully.");
       navigate("/login", { replace: true });
@@ -215,38 +146,12 @@ export default function Signup() {
             </div>
 
             <Field label="Mobile Number">
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input className="min-w-0 flex-1" value={form.phone} onChange={(event) => updateField("phone", event.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10 digit mobile number" required />
-                <Button type="button" className="shrink-0" variant={isMobileVerified ? "secondary" : "primary"} disabled={isRequestingOtp || isMobileVerified || otpCooldown > 0 || normalizedPhone.length < 8} onClick={() => void handleRequestOtp()}>
-                  {isMobileVerified ? <CheckCircle2 className="h-4 w-4" /> : <Send className="h-4 w-4" />}
-                  {isMobileVerified ? "Verified" : otpCooldown > 0 ? `Resend in ${otpCooldown}s` : otpSent ? "Resend OTP" : "Send OTP"}
-                </Button>
-              </div>
+              <Input className="min-w-0 flex-1" value={form.phone} onChange={(event) => updateField("phone", event.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10 digit mobile number" required />
             </Field>
-
-            {otpSent && !isMobileVerified ? (
-              <div className="rounded-lg border border-primary/20 bg-surface-soft p-4">
-                <Field label="Mobile OTP">
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Input className="min-w-0 flex-1 text-center tracking-[0.35em]" inputMode="numeric" maxLength={6} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" required />
-                    <Button type="button" className="shrink-0" disabled={isVerifyingOtp || otp.length !== 6} onClick={() => void handleVerifyOtp()}>
-                      Verify OTP
-                    </Button>
-                  </div>
-                </Field>
-              </div>
-            ) : null}
-
-            {isMobileVerified ? (
-              <div className="flex items-center gap-2 rounded-lg border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
-                <CheckCircle2 className="h-4 w-4" />
-                Mobile verified
-              </div>
-            ) : null}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Email Address">
-                <Input type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} placeholder="owner@gmail.com" required />
+                <Input type="email" value={form.email} onChange={(event) => updateField("email", event.target.value)} placeholder="owner@gmail.com" />
               </Field>
               <Field label="GST Number" hint="optional">
                 <Input value={form.gstNumber} onChange={(event) => updateField("gstNumber", event.target.value.toUpperCase())} placeholder="GST number if available" />
@@ -313,7 +218,7 @@ export default function Signup() {
               <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
-            <Button type="submit" disabled={isLoading || !isMobileVerified}>
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? "Creating account..." : "Create Account"}
             </Button>
           )}

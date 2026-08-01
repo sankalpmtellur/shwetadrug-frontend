@@ -53,13 +53,29 @@ function mapOrderItem(item: BackendOrderItem, index: number) {
   };
 }
 
-function mapCreatedOrder(order: BackendOrder): CreatedOrder {
+function mapBackendOrderCartItem(item: BackendOrderItem, index: number): CartItem {
+  const unitPrice = item.quantity > 0 ? item.final_price / item.quantity : item.ptr_at_order;
+  return {
+    medicineId: String(item.medicine_id),
+    name: item.name,
+    sku: item.batch || `${item.medicine_id}-${index}`,
+    qty: item.quantity,
+    pack: item.packing,
+    unitPrice,
+    amount: item.final_price,
+    stock: item.quantity,
+    status: "In Stock",
+  };
+}
+
+function mapCreatedOrder(order: BackendOrder, fallbackItems: CartItem[] = []): CreatedOrder {
   return {
     id: String(order.id),
     orderNo: order.order_no,
     status: order.status,
     totalAmount: order.total_amount,
     createdAt: order.order_date,
+    items: order.ordered_items?.length ? order.ordered_items.map(mapBackendOrderCartItem) : fallbackItems,
   };
 }
 
@@ -126,7 +142,7 @@ function mapInvoice(order: RetailerOrder): OrderInvoice {
 export const orderService = {
   async createOrder(_items: CartItem[], _deliveryAddressId?: string) {
     const response = await api.post<ApiResponse<BackendOrder>>("/orders");
-    return mapCreatedOrder(response.data.data);
+    return mapCreatedOrder(response.data.data, _items);
   },
 
   async getOrders() {

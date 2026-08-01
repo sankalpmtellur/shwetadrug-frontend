@@ -15,6 +15,7 @@ function buildLocalItem(medicine: Medicine, qty: number): CartItem {
     pack: medicine.pack,
     unitPrice: medicine.price,
     amount: medicine.price * qty,
+    stock: medicine.stock,
     status: medicine.status === "Limited" ? "Limited" : "In Stock",
   };
 }
@@ -25,11 +26,11 @@ function mergeLocalItem(items: CartItem[], medicine: Medicine, qty: number) {
 
   if (!existing) return [...items, nextItem];
 
-  return items.map((item) =>
-    item.medicineId === medicine.id
-      ? { ...item, qty: item.qty + qty, amount: item.amount + nextItem.amount }
-      : item,
-  );
+  return items.map((item) => {
+    if (item.medicineId !== medicine.id) return item;
+    const nextQty = Math.min(item.qty + qty, Math.max(1, item.stock));
+    return { ...item, qty: nextQty, amount: item.unitPrice * nextQty };
+  });
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -142,7 +143,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
       },
       setItemQuantity: async (medicineId, qty) => {
-        const nextQty = Math.max(0, qty);
+        const currentItem = items.find((item) => item.medicineId === medicineId);
+        const maxQty = currentItem?.stock ?? Number.MAX_SAFE_INTEGER;
+        const nextQty = Math.min(Math.max(0, qty), maxQty);
 
         if (!isRetailerSession) {
           setItems((current) =>

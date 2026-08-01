@@ -31,6 +31,7 @@ export function mapBackendCart(cart: BackendCart): CartItem[] {
     pack: item.packing,
     unitPrice: item.quantity > 0 ? item.line_total / item.quantity : item.ptr,
     amount: item.line_total,
+    stock: item.stock,
     status: item.stock <= 20 ? "Limited" : "In Stock",
   }));
 }
