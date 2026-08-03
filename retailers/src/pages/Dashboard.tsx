@@ -135,7 +135,7 @@ export default function Dashboard() {
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search medicine name, SKU, or generic name"
+                  placeholder="Search medicine name"
                   className="h-12 w-full rounded-lg border-transparent bg-slate-50 py-3 pl-12 pr-4 text-base font-semibold text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:bg-white"
                 />
               </label>
