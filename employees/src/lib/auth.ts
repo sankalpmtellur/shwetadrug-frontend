@@ -17,14 +17,6 @@ export function saveUser(user: User) {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
-export function getAccessToken() {
-  return getUser() ? "session" : null;
-}
-
-export function getCsrfToken() {
-  return null;
-}
-
 export function getUser(): User | null {
   const rawUser = localStorage.getItem(USER_KEY);
   if (!rawUser) return null;
@@ -41,8 +33,4 @@ export function clearAuth() {
   localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
-}
-
-export function isAuthenticated() {
-  return Boolean(getUser());
 }

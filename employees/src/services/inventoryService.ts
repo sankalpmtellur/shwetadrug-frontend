@@ -60,14 +60,14 @@ export type CreateMedicineInventoryPayload = {
 export const inventoryService = {
   async getInventory() {
     const response = await api.get<ApiResponse<InventoryLot[]>>("/employee/inventory", {
-      params: { limit: 100 },
+      params: { limit: 500 },
     });
     return response.data.data;
   },
 
   async getExpiringInventory(days = 60) {
     const response = await api.get<ApiResponse<InventoryLot[]>>("/employee/inventory/alerts/expiring", {
-      params: { days, limit: 100 },
+      params: { days, limit: 500 },
     });
     return response.data.data;
   },

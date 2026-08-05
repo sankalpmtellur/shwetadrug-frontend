@@ -42,8 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function restoreSession() {
       try {
-        const cachedUser = getUser();
-        if (!cachedUser) return;
+        if (!getUser()) return;
         await loadEmployeeProfile();
       } catch {
         clearSession();

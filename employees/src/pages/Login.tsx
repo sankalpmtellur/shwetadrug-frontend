@@ -80,10 +80,11 @@ export default function Login() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label htmlFor="employee-email" className="text-sm font-medium text-slate-700">
                                 Email Address
                             </label>
                             <input
+                                id="employee-email"
                                 type="email"
                                 value={email}
                                 onChange={(event) => setEmail(event.target.value)}
@@ -94,11 +95,12 @@ export default function Login() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">
+                            <label htmlFor="employee-password" className="text-sm font-medium text-slate-700">
                                 Password
                             </label>
                             <div className="relative">
                                 <input
+                                    id="employee-password"
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(event) => setPassword(event.target.value)}

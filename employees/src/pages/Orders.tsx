@@ -57,8 +57,11 @@ export default function Orders() {
       const filtered = orders.filter((order) => {
         const search = query.trim().toLowerCase();
         if (!search) return true;
-        const area = order.deliveryAddress?.city ?? "";
-        return [order.orderNo, order.retailer.pharmacyName, area].some((value) => value.toLowerCase().includes(search));
+        const area = formatArea(order);
+        const address = order.deliveryAddress
+          ? [order.deliveryAddress.line1, order.deliveryAddress.line2, order.deliveryAddress.city, order.deliveryAddress.state, order.deliveryAddress.pincode].filter(Boolean).join(" ")
+          : "";
+        return [order.orderNo, order.retailer.pharmacyName, order.retailer.ownerName, order.retailer.code, area, address].some((value) => value.toLowerCase().includes(search));
       });
 
       return filtered.sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
@@ -257,7 +260,10 @@ export default function Orders() {
 }
 
 function formatArea(order: EmployeeOrder) {
-  return order.deliveryAddress?.city ?? order.deliveryAddress?.state ?? "Not available";
+  const address = order.deliveryAddress;
+  if (!address) return "Not available";
+
+  return [address.city, address.state, address.pincode, address.line1].find((value) => value?.trim()) ?? "Not available";
 }
 
 function formatDateTime(value: string) {

@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { PackagePlus, RefreshCcw } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { PackagePlus, RefreshCcw, Search, X } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Cell, Table } from "../components/common/Table";
@@ -45,11 +45,26 @@ export default function Inventory() {
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
+  const [query, setQuery] = useState("");
 
   const selectedItem = items.find((item) => item.id === selectedItemId) ?? null;
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const visibleItems = useMemo(() => {
+    const search = query.trim().toLowerCase();
+    if (!search) return items;
+
+    return items.filter((item) =>
+      [
+        item.medicine.name,
+        item.medicine.sku,
+        item.batchNumber,
+        item.status,
+        item.medicine.manufacturer?.name ?? "",
+      ].some((value) => value.toLowerCase().includes(search)),
+    );
+  }, [items, query]);
+  const totalPages = Math.max(1, Math.ceil(visibleItems.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageItems = visibleItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   async function loadInventory() {
     setIsLoading(true);
@@ -240,7 +255,9 @@ export default function Inventory() {
       });
       setAddMessage({ tone: "success", text: `${createdItem.medicine.name} batch ${createdItem.batchNumber} added to inventory.` });
       setAddForm(emptyAddForm);
-      await loadInventory();
+      setItems((current) => [createdItem, ...current.filter((item) => item.id !== createdItem.id)]);
+      setQuery(createdItem.batchNumber);
+      setPage(1);
       setSelectedItemId(createdItem.id);
       setForm({
         quantity: String(createdItem.quantityOnHand),
@@ -350,10 +367,38 @@ export default function Inventory() {
               <h2 className="text-lg font-bold text-navy">Current Inventory</h2>
               <p className="text-sm text-muted">Batch-wise backend inventory for employee updates and reorder decisions.</p>
             </div>
-            <Button className="gap-2" onClick={() => void loadInventory()} variant="secondary">
-              <RefreshCcw className="h-4 w-4" />
-              Retry
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                <input
+                  value={query}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    setPage(1);
+                  }}
+                  className="h-10 w-full rounded-lg border border-border pl-9 pr-10 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 sm:w-72"
+                  placeholder="Search medicine, SKU, batch..."
+                  aria-label="Search inventory"
+                />
+                {query ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      setPage(1);
+                    }}
+                    className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-muted hover:bg-surface-soft hover:text-navy"
+                    aria-label="Clear inventory search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </label>
+              <Button className="gap-2" onClick={() => void loadInventory()} variant="secondary">
+                <RefreshCcw className="h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {isLoading ? <p className="py-8 text-center text-sm font-semibold text-muted">Loading inventory...</p> : null}
@@ -364,8 +409,8 @@ export default function Inventory() {
             </div>
           ) : null}
 
-        {!isLoading && !error && items.length > 0 ? (
-          <Table headers={["Medicine", "SKU", "Batch", "Qty", "MRP", "Price", "Expiry", "Action"]}>
+          {!isLoading && !error && visibleItems.length > 0 ? (
+            <Table headers={["Medicine", "SKU", "Batch", "Qty", "MRP", "Price", "Expiry", "Action"]}>
               {pageItems.map((item) => (
                 <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
                   <Cell strong>{item.medicine.name}</Cell>
@@ -385,8 +430,11 @@ export default function Inventory() {
             </Table>
           ) : null}
           {!isLoading && !error && items.length === 0 ? <p className="py-8 text-center text-sm text-muted">No inventory lots found.</p> : null}
-          {!isLoading && !error && items.length > 0 ? (
-            <Pagination page={currentPage} totalPages={totalPages} totalItems={items.length} onPageChange={setPage} />
+          {!isLoading && !error && items.length > 0 && visibleItems.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted">No inventory lots match your search.</p>
+          ) : null}
+          {!isLoading && !error && visibleItems.length > 0 ? (
+            <Pagination page={currentPage} totalPages={totalPages} totalItems={visibleItems.length} onPageChange={setPage} />
           ) : null}
         </Card>
 
