@@ -19,31 +19,18 @@ export type UserProfile = AuthUser & {
 
 type LoginResponse = {
   user: AuthUser;
-  accessToken: string;
-  csrfToken: string;
 };
-
-type RefreshResponse = LoginResponse;
-
-let refreshPromise: Promise<RefreshResponse> | null = null;
 
 export const authService = {
   login(email: string, password: string) {
-    return apiRequest<LoginResponse>(api.post("/auth/login", { email, password }));
+    return apiRequest<LoginResponse>(api.post("/admin/login", { email, password }));
   },
 
   logout() {
-    return apiRequest<null>(api.post("/auth/logout"));
-  },
-
-  refreshToken() {
-    refreshPromise ??= apiRequest<RefreshResponse>(api.post("/auth/refresh-token", {})).finally(() => {
-      refreshPromise = null;
-    });
-    return refreshPromise;
+    return apiRequest<null>(api.post("/admin/logout"));
   },
 
   getProfile() {
-    return apiRequest<UserProfile>(api.get("/users/profile"));
+    return apiRequest<UserProfile>(api.get("/admin/profile"));
   },
 };

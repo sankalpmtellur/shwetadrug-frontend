@@ -39,6 +39,6 @@ export type AdminDashboard = {
 
 export const dashboardService = {
   getAdminDashboard() {
-    return apiRequest<AdminDashboard>(api.get("/dashboard/admin"));
+    return apiRequest<AdminDashboard>(api.get("/admin/dashboard"));
   },
 };

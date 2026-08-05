@@ -39,12 +39,12 @@ async function getList<T>(path: string, params: { page?: number; limit?: number 
 
 export const operationsService = {
   getMedicines() {
-    return getList<Medicine>("/medicines");
+    return getList<Medicine>("/admin/medicines");
   },
   deleteMedicine(id: string) {
-    return apiResult<Medicine>(api.delete(`/medicines/${id}`));
+    return apiResult<Medicine>(api.delete(`/admin/medicines/${id}`));
   },
   getOrders(page = 1, limit = 10) {
-    return getList<Order>("/orders", { page, limit });
+    return getList<Order>("/admin/orders", { page, limit });
   },
 };

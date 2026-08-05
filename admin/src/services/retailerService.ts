@@ -37,7 +37,7 @@ export type RetailerAccount = {
 
 export const retailerService = {
   async getRetailers() {
-    const result = await apiResult<RetailerAccount[]>(api.get("/retailers", { params: { limit: 100 } }));
+    const result = await apiResult<RetailerAccount[]>(api.get("/admin/retailers", { params: { limit: 100 } }));
     return {
       items: result.data,
       meta: readListMeta(result.meta),
@@ -45,6 +45,6 @@ export const retailerService = {
   },
 
   updateRetailerStatus(id: string, status: string) {
-    return apiResult<RetailerAccount>(api.patch(`/retailers/${id}`, { status }));
+    return apiResult<RetailerAccount>(api.patch(`/admin/retailers/${id}`, { status }));
   },
 };

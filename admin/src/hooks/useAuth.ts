@@ -1,6 +1,6 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { ApiError, tokenStorage } from "../lib/api";
+import { ApiError } from "../lib/api";
 import { authService } from "../services/authService";
 import type { UserProfile } from "../services/authService";
 
@@ -36,7 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const clearSession = useCallback(() => {
-    tokenStorage.clear();
     setUser(null);
   }, []);
 
@@ -52,8 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function restoreSession() {
       try {
-        const refreshed = await authService.refreshToken();
-        tokenStorage.setAuth(refreshed);
         await loadAdminProfile();
       } catch {
         clearSession();
@@ -72,9 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         const result = await authService.login(email, password);
-        tokenStorage.setAuth(result);
 
-        const profile = await authService.getProfile();
+        const profile = result.user;
         if (!isAdmin(profile)) {
           try {
             await authService.logout();

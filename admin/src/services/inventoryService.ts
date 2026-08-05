@@ -32,7 +32,7 @@ export type InventoryItem = {
 
 export const inventoryService = {
   async getInventory() {
-    const result = await apiResult<InventoryItem[]>(api.get("/inventory", { params: { limit: 100 } }));
+    const result = await apiResult<InventoryItem[]>(api.get("/admin/inventory", { params: { limit: 100 } }));
     return {
       items: result.data,
       meta: readListMeta(result.meta),
@@ -40,7 +40,7 @@ export const inventoryService = {
   },
 
   async getExpiringInventory(days = 60) {
-    const result = await apiResult<InventoryItem[]>(api.get("/inventory/alerts/expiring", { params: { days, limit: 100 } }));
+    const result = await apiResult<InventoryItem[]>(api.get("/admin/inventory/alerts/expiring", { params: { days, limit: 100 } }));
     return {
       items: result.data,
       meta: readListMeta(result.meta),
@@ -61,7 +61,7 @@ export const inventoryService = {
       manufacturerName?: string;
     },
   ) {
-    const result = await apiResult<InventoryItem>(api.patch(`/inventory/${id}`, data));
+    const result = await apiResult<InventoryItem>(api.patch(`/admin/inventory/${id}`, data));
     return result.data;
   },
 };
