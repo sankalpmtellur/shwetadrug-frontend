@@ -12,7 +12,7 @@ export type EmployeeDashboard = {
 
 export const dashboardService = {
   async getEmployeeDashboard() {
-    const response = await api.get<ApiResponse<EmployeeDashboard>>("/dashboard/employee");
+    const response = await api.get<ApiResponse<EmployeeDashboard>>("/employee/dashboard");
     return response.data.data;
   },
 };

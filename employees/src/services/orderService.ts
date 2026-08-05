@@ -38,19 +38,19 @@ export type EmployeeOrder = {
 
 export const orderService = {
   async getOrders() {
-    const response = await api.get<ApiResponse<EmployeeOrder[]>>("/orders", {
+    const response = await api.get<ApiResponse<EmployeeOrder[]>>("/employee/orders", {
       params: { limit: 100 },
     });
     return response.data.data;
   },
 
   async getOrderById(id: string) {
-    const response = await api.get<ApiResponse<EmployeeOrder>>(`/orders/${id}`);
+    const response = await api.get<ApiResponse<EmployeeOrder>>(`/employee/orders/${id}`);
     return response.data.data;
   },
 
   async downloadInvoicePdf(id: string) {
-    const response = await api.get<Blob>(`/orders/${id}/invoice/pdf`, {
+    const response = await api.get<Blob>(`/employee/orders/${id}/invoice/pdf`, {
       responseType: "blob",
       headers: { Accept: "application/pdf" },
     });

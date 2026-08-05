@@ -1,6 +1,6 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { clearAuth, saveAuth, saveUser } from "../lib/auth";
+import { clearAuth, getUser, saveAuth, saveUser } from "../lib/auth";
 import { authService } from "../services/authService";
 import type { AuthResponse, LoginPayload, User } from "../types/auth";
 
@@ -42,13 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function restoreSession() {
       try {
-        const refreshed = await authService.refreshToken();
-        if (!isEmployee(refreshed.user)) {
-          clearSession();
-          return;
-        }
-
-        saveAuth(refreshed);
+        const cachedUser = getUser();
+        if (!cachedUser) return;
         await loadEmployeeProfile();
       } catch {
         clearSession();

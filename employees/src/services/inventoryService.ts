@@ -59,26 +59,26 @@ export type CreateMedicineInventoryPayload = {
 
 export const inventoryService = {
   async getInventory() {
-    const response = await api.get<ApiResponse<InventoryLot[]>>("/inventory", {
+    const response = await api.get<ApiResponse<InventoryLot[]>>("/employee/inventory", {
       params: { limit: 100 },
     });
     return response.data.data;
   },
 
   async getExpiringInventory(days = 60) {
-    const response = await api.get<ApiResponse<InventoryLot[]>>("/inventory/alerts/expiring", {
+    const response = await api.get<ApiResponse<InventoryLot[]>>("/employee/inventory/alerts/expiring", {
       params: { days, limit: 100 },
     });
     return response.data.data;
   },
 
   async updateInventory(id: string, payload: InventoryUpdatePayload) {
-    const response = await api.patch<ApiResponse<InventoryLot>>(`/inventory/${id}`, payload);
+    const response = await api.patch<ApiResponse<InventoryLot>>(`/employee/inventory/${id}`, payload);
     return response.data.data;
   },
 
   async createMedicineInventory(payload: CreateMedicineInventoryPayload) {
-    const response = await api.post<ApiResponse<InventoryLot>>("/inventory", payload);
+    const response = await api.post<ApiResponse<InventoryLot>>("/employee/inventory", payload);
     return response.data.data;
   },
 };
