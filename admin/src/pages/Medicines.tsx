@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Boxes, PackageSearch, ShieldCheck, Trash2 } from "lucide-react";
+import { Boxes, PackageSearch, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Metric } from "../components/common/Metric";
@@ -11,12 +11,22 @@ import { formatCount, formatCurrency } from "../utils/formatters";
 
 const pageSize = 10;
 
+function searchMatches(item: Medicine, query: string) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return true;
+
+  return [item.sku, item.name, item.manufacturer?.name, item.category?.name, item.status, item.packSize]
+    .filter(Boolean)
+    .some((value) => String(value).toLowerCase().includes(normalized));
+}
+
 export default function Medicines() {
   const [items, setItems] = useState<Medicine[]>([]);
   const [meta, setMeta] = useState<ListMeta>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Medicine | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -45,9 +55,10 @@ export default function Medicines() {
 
   const activeCount = useMemo(() => items.filter((item) => item.status === "ACTIVE").length, [items]);
   const lowStockCount = useMemo(() => items.filter((item) => item.availableStock <= item.reorderLevel).length, [items]);
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const filteredItems = useMemo(() => items.filter((item) => searchMatches(item, search)), [items, search]);
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   async function confirmDelete() {
     if (!deleteTarget) return;
@@ -77,12 +88,26 @@ export default function Medicines() {
       </div>
 
       <Card>
-        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-lg font-black text-navy">Medicine Catalog</h2>
             <p className="text-sm text-muted">Live medicine pricing and stock for launch operations.</p>
           </div>
-          {error ? <Button onClick={() => void loadMedicines()}>Retry</Button> : null}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label className="relative block min-w-0 sm:w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <input
+                className="h-10 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search medicines"
+              />
+            </label>
+            {error ? <Button onClick={() => void loadMedicines()}>Retry</Button> : null}
+          </div>
         </div>
 
         {deleteMessage ? (
@@ -92,9 +117,9 @@ export default function Medicines() {
         ) : null}
         {isLoading ? <p className="text-sm font-bold text-muted">Loading medicines...</p> : null}
         {error ? <p className="text-sm font-bold text-error">{error}</p> : null}
-        {!isLoading && !error && items.length === 0 ? <p className="text-sm font-bold text-muted">No medicines found.</p> : null}
+        {!isLoading && !error && filteredItems.length === 0 ? <p className="text-sm font-bold text-muted">No medicines found.</p> : null}
 
-        {!isLoading && !error && items.length > 0 ? (
+        {!isLoading && !error && filteredItems.length > 0 ? (
           <Table headers={["SKU", "Medicine", "Manufacturer", "Stock", "MRP", "Selling", "Actions"]}>
             {pageItems.map((item) => (
               <tr key={item.id} className="border-t border-border hover:bg-surface-soft/70">
@@ -114,7 +139,7 @@ export default function Medicines() {
             ))}
           </Table>
         ) : null}
-        {!isLoading && !error && items.length > 0 ? <Pagination page={currentPage} totalPages={totalPages} totalItems={items.length} onPageChange={setPage} /> : null}
+        {!isLoading && !error && filteredItems.length > 0 ? <Pagination page={currentPage} totalPages={totalPages} totalItems={filteredItems.length} onPageChange={setPage} /> : null}
       </Card>
 
       {deleteTarget ? (

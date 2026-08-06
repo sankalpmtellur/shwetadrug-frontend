@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Boxes, PackageSearch, RefreshCcw } from "lucide-react";
+import { Boxes, PackageSearch, RefreshCcw, Search } from "lucide-react";
 import { Button } from "../components/common/Button";
 import { Card } from "../components/common/Card";
 import { Metric } from "../components/common/Metric";
@@ -32,6 +32,15 @@ function isNeedsDecision(item: InventoryItem) {
   return item.availableQuantity <= item.medicine.reorderLevel || item.status === "LOW" || item.status === "REORDER" || item.status === "OUT_OF_STOCK";
 }
 
+function searchMatches(item: InventoryItem, query: string) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return true;
+
+  return [item.medicine.name, item.medicine.sku, item.batchNumber, item.status, item.medicine.packSize]
+    .filter(Boolean)
+    .some((value) => String(value).toLowerCase().includes(normalized));
+}
+
 export default function Inventory() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [meta, setMeta] = useState<ListMeta>({});
@@ -40,6 +49,7 @@ export default function Inventory() {
   const [drafts, setDrafts] = useState<Record<string, InventoryDraft>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const loadInventory = useCallback(async () => {
@@ -157,9 +167,10 @@ export default function Inventory() {
 
   const needsDecisionCount = useMemo(() => items.filter(isNeedsDecision).length, [items]);
   const stockoutCount = useMemo(() => items.filter((item) => item.availableQuantity <= 0 || item.status === "OUT_OF_STOCK").length, [items]);
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const filteredItems = useMemo(() => items.filter((item) => searchMatches(item, search)), [items, search]);
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageItems = items.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <section className="space-y-6">
@@ -170,24 +181,38 @@ export default function Inventory() {
       </div>
 
       <Card>
-        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-lg font-black text-navy">Inventory Lots</h2>
             <p className="text-sm text-muted">Useful stock quantities, expiry dates, and pricing for launch operations.</p>
           </div>
-          {error ? (
-            <Button type="button" onClick={() => void loadInventory()}>
-              Retry
-            </Button>
-          ) : null}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label className="relative block min-w-0 sm:w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <input
+                className="h-10 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-sm font-bold text-navy outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search inventory"
+              />
+            </label>
+            {error ? (
+              <Button type="button" onClick={() => void loadInventory()}>
+                Retry
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {isLoading ? <p className="text-sm font-bold text-muted">Loading inventory...</p> : null}
         {error ? <p className="text-sm font-bold text-error">{error}</p> : null}
         {actionError ? <p className="mb-3 text-sm font-bold text-error">{actionError}</p> : null}
-        {!isLoading && !error && items.length === 0 ? <p className="text-sm font-bold text-muted">No inventory lots found.</p> : null}
+        {!isLoading && !error && filteredItems.length === 0 ? <p className="text-sm font-bold text-muted">No inventory lots found.</p> : null}
 
-        {!isLoading && !error && items.length > 0 ? (
+        {!isLoading && !error && filteredItems.length > 0 ? (
           <Table headers={["Medicine", "Batch", "Expiry", "Qty", "MRP", "Purchase", "Selling", "GST", "Status", "Actions/Edit"]}>
             {pageItems.map((item) => {
               const draft = getDraft(item);
@@ -238,7 +263,7 @@ export default function Inventory() {
             })}
           </Table>
         ) : null}
-        {!isLoading && !error && items.length > 0 ? <Pagination page={currentPage} totalPages={totalPages} totalItems={items.length} onPageChange={setPage} /> : null}
+        {!isLoading && !error && filteredItems.length > 0 ? <Pagination page={currentPage} totalPages={totalPages} totalItems={filteredItems.length} onPageChange={setPage} /> : null}
       </Card>
     </section>
   );

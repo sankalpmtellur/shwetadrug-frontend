@@ -15,6 +15,7 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const sessionHintKey = "sdd_admin_session_active";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiError) {
@@ -30,12 +31,29 @@ function isAdmin(user: UserProfile | null) {
   return user?.role === "ADMIN";
 }
 
+function hasSessionHint() {
+  return typeof window !== "undefined" && localStorage.getItem(sessionHintKey) === "true";
+}
+
+function setSessionHint() {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(sessionHintKey, "true");
+  }
+}
+
+function clearSessionHint() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(sessionHintKey);
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const clearSession = useCallback(() => {
+    clearSessionHint();
     setUser(null);
   }, []);
 
@@ -50,6 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function restoreSession() {
+      if (!hasSessionHint()) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         await loadAdminProfile();
       } catch {
@@ -82,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setUser(profile);
+        setSessionHint();
       } catch (authError) {
         clearSession();
         setError(getErrorMessage(authError));

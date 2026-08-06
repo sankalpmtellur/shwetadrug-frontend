@@ -47,4 +47,8 @@ export const operationsService = {
   getOrders(page = 1, limit = 10) {
     return getList<Order>("/admin/orders", { page, limit });
   },
+  async getOrder(id: string) {
+    const result = await apiResult<Order>(api.get(`/admin/orders/${id}`));
+    return result.data;
+  },
 };
